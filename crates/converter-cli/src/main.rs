@@ -121,11 +121,17 @@ fn main() -> Result<()> {
                 println!("{}", serde_json::to_string_pretty(&formats)?);
             } else {
                 for format in formats {
+                    let codecs = [
+                        format.default_video_codec.as_deref(),
+                        format.default_audio_codec.as_deref(),
+                    ]
+                    .into_iter()
+                    .flatten()
+                    .collect::<Vec<_>>()
+                    .join(" + ");
                     println!(
-                        "{} ({:?}) -> {}",
-                        format.id,
-                        format.category,
-                        format.output_formats.join(", ")
+                        "{} ({:?}) [{}]",
+                        format.display_name, format.category, codecs
                     );
                 }
             }

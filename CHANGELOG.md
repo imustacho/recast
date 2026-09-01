@@ -6,6 +6,21 @@ All notable changes to Recast are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-09-01
+
+### Added
+
+- Add comprehensive FFmpeg-backed image, audio, and video format support.
+- Add centralized format and codec capabilities shared by core, CLI, and desktop UI.
+- Add video-to-audio extraction for every supported audio target.
+- Add format alias, codec mapping, engine discovery, and UI capability tests.
+
+### Changed
+
+- Use FFmpeg for image conversions and remove the unused ImageMagick engine path.
+- Populate desktop target selectors from backend capabilities.
+- Document the supported format and default codec matrix.
+
 ## [0.1.3] - 2026-07-13
 
 ### Fixed
@@ -38,8 +53,9 @@ All notable changes to Recast are documented here. The format follows
 - Desktop shell and reusable command-line interface.
 - Cross-platform CI and GitHub Release automation.
 
-[Unreleased]: https://github.com/imustacho/offconvert/compare/v0.1.3...HEAD
-[0.1.3]: https://github.com/imustacho/offconvert/compare/v0.1.2...v0.1.3
-[0.1.2]: https://github.com/imustacho/offconvert/compare/v0.1.1...v0.1.2
-[0.1.1]: https://github.com/imustacho/offconvert/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/imustacho/offconvert/releases/tag/v0.1.0
+[Unreleased]: https://github.com/imustacho/recast/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/imustacho/recast/compare/v0.1.3...v0.1.4
+[0.1.3]: https://github.com/imustacho/recast/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/imustacho/recast/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/imustacho/recast/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/imustacho/recast/releases/tag/v0.1.0

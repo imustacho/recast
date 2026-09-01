@@ -1,5 +1,30 @@
 export type MediaCategory = "image" | "video" | "audio";
 
+export interface FormatDefinition {
+  id: string;
+  displayName: string;
+  category: MediaCategory;
+  extensions: string[];
+  mimeTypes: string[];
+  defaultExtension: string;
+  ffmpegFormat?: string;
+  defaultVideoCodec?: string;
+  defaultAudioCodec?: string;
+}
+
+export interface CodecDefinition {
+  id: string;
+  kind: "video" | "audio";
+  ffmpegEncoder: string;
+  defaultArgs: string[];
+}
+
+export interface ConversionCapabilities {
+  formats: FormatDefinition[];
+  codecs: CodecDefinition[];
+  targetsBySourceCategory: Record<MediaCategory, string[]>;
+}
+
 export interface ConversionJob {
   id: string;
   inputPath: string;

@@ -4,16 +4,5 @@
     "license": "GPL-3.0-or-later (build dependent)",
     "sourceUrl": "https://ffmpeg.org/download.html",
     "buildConfiguration": "Platform-specific binaries distributed by ffmpeg-static 5.3.0"
-  },
-  "ffprobe": {
-    "version": "",
-    "license": "",
-    "sourceUrl": "",
-    "buildConfiguration": ""
-  },
-  "imagemagick": {
-    "version": "",
-    "license": "",
-    "sourceUrl": ""
   }
 }

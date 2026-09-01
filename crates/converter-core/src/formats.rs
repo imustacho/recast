@@ -1,63 +1,482 @@
-use recast_models::{FormatDefinition, MediaCategory};
+use recast_models::{
+    CodecDefinition, CodecKind, ConversionCapabilities, FormatDefinition, MediaCategory,
+};
+use std::collections::BTreeMap;
 
-pub fn built_in_formats() -> Vec<FormatDefinition> {
+pub fn built_in_codecs() -> Vec<CodecDefinition> {
     vec![
-        FormatDefinition {
-            id: "png".into(),
-            category: MediaCategory::Image,
-            extensions: vec!["png".into()],
-            mime_types: vec!["image/png".into()],
-            output_formats: vec!["jpg".into(), "webp".into(), "avif".into(), "bmp".into()],
-        },
-        FormatDefinition {
-            id: "jpg".into(),
-            category: MediaCategory::Image,
-            extensions: vec!["jpg".into(), "jpeg".into()],
-            mime_types: vec!["image/jpeg".into()],
-            output_formats: vec!["png".into(), "webp".into(), "avif".into(), "bmp".into()],
-        },
-        FormatDefinition {
-            id: "webp".into(),
-            category: MediaCategory::Image,
-            extensions: vec!["webp".into()],
-            mime_types: vec!["image/webp".into()],
-            output_formats: vec!["png".into(), "jpg".into(), "avif".into()],
-        },
-        FormatDefinition {
-            id: "mp4".into(),
-            category: MediaCategory::Video,
-            extensions: vec!["mp4".into()],
-            mime_types: vec!["video/mp4".into()],
-            output_formats: vec!["mkv".into(), "webm".into(), "mp3".into()],
-        },
-        FormatDefinition {
-            id: "mkv".into(),
-            category: MediaCategory::Video,
-            extensions: vec!["mkv".into()],
-            mime_types: vec!["video/x-matroska".into()],
-            output_formats: vec!["mp4".into(), "webm".into(), "mp3".into()],
-        },
-        FormatDefinition {
-            id: "mp3".into(),
-            category: MediaCategory::Audio,
-            extensions: vec!["mp3".into()],
-            mime_types: vec!["audio/mpeg".into()],
-            output_formats: vec!["wav".into(), "flac".into(), "ogg".into()],
-        },
-        FormatDefinition {
-            id: "wav".into(),
-            category: MediaCategory::Audio,
-            extensions: vec!["wav".into()],
-            mime_types: vec!["audio/wav".into()],
-            output_formats: vec!["mp3".into(), "flac".into(), "ogg".into()],
-        },
+        video_codec("mjpeg", "mjpeg", &["-q:v", "2"]),
+        video_codec("png", "png", &[]),
+        video_codec("webp", "libwebp", &["-quality", "82"]),
+        video_codec("bmp", "bmp", &[]),
+        video_codec("tiff", "tiff", &[]),
+        video_codec("gif", "gif", &[]),
+        video_codec(
+            "av1",
+            "libaom-av1",
+            &["-crf", "30", "-b:v", "0", "-still-picture", "1"],
+        ),
+        video_codec("h264", "libx264", &["-preset", "medium", "-crf", "23"]),
+        video_codec("vp9", "libvpx-vp9", &["-crf", "31", "-b:v", "0"]),
+        video_codec("mpeg4", "mpeg4", &["-q:v", "5"]),
+        video_codec("mpeg2", "mpeg2video", &["-q:v", "5"]),
+        video_codec("theora", "libtheora", &["-q:v", "7"]),
+        audio_codec("mp3", "libmp3lame", &["-q:a", "2"]),
+        audio_codec("pcm-s16le", "pcm_s16le", &[]),
+        audio_codec("pcm-s16be", "pcm_s16be", &[]),
+        audio_codec("flac", "flac", &[]),
+        audio_codec("aac", "aac", &["-b:a", "192k"]),
+        audio_codec("vorbis", "libvorbis", &["-q:a", "5"]),
+        audio_codec("opus", "libopus", &["-b:a", "160k"]),
+        audio_codec("alac", "alac", &[]),
+        audio_codec("ac3", "ac3", &["-b:a", "192k"]),
+        audio_codec("mp2", "mp2", &["-b:a", "192k"]),
     ]
 }
 
-pub fn target_formats_for(source_format: &str) -> Vec<String> {
+pub fn built_in_formats() -> Vec<FormatDefinition> {
+    vec![
+        image_format(
+            "jpg",
+            "JPG / JPEG",
+            &["jpg", "jpeg"],
+            &["image/jpeg"],
+            "jpg",
+            "mjpeg",
+        ),
+        image_format("png", "PNG", &["png"], &["image/png"], "png", "png"),
+        image_format("webp", "WebP", &["webp"], &["image/webp"], "webp", "webp"),
+        image_format("bmp", "BMP", &["bmp"], &["image/bmp"], "bmp", "bmp"),
+        image_format(
+            "tiff",
+            "TIFF",
+            &["tif", "tiff"],
+            &["image/tiff"],
+            "tiff",
+            "tiff",
+        ),
+        image_format("gif", "GIF", &["gif"], &["image/gif"], "gif", "gif"),
+        image_format("avif", "AVIF", &["avif"], &["image/avif"], "avif", "av1"),
+        audio_format(
+            "mp3",
+            "MP3",
+            &["mp3"],
+            &["audio/mpeg"],
+            "mp3",
+            "mp3",
+            Some("mp3"),
+        ),
+        audio_format(
+            "wav",
+            "WAV",
+            &["wav"],
+            &["audio/wav", "audio/x-wav"],
+            "wav",
+            "pcm-s16le",
+            Some("wav"),
+        ),
+        audio_format(
+            "flac",
+            "FLAC",
+            &["flac"],
+            &["audio/flac"],
+            "flac",
+            "flac",
+            Some("flac"),
+        ),
+        audio_format(
+            "aac",
+            "AAC",
+            &["aac"],
+            &["audio/aac"],
+            "aac",
+            "aac",
+            Some("adts"),
+        ),
+        audio_format(
+            "m4a",
+            "M4A",
+            &["m4a"],
+            &["audio/mp4"],
+            "m4a",
+            "aac",
+            Some("ipod"),
+        ),
+        audio_format(
+            "ogg",
+            "OGG Vorbis",
+            &["ogg", "oga"],
+            &["audio/ogg"],
+            "ogg",
+            "vorbis",
+            Some("ogg"),
+        ),
+        audio_format(
+            "opus",
+            "Opus",
+            &["opus"],
+            &["audio/opus", "audio/ogg"],
+            "opus",
+            "opus",
+            Some("ogg"),
+        ),
+        audio_format(
+            "aiff",
+            "AIFF",
+            &["aif", "aiff", "aifc"],
+            &["audio/aiff", "audio/x-aiff"],
+            "aiff",
+            "pcm-s16be",
+            Some("aiff"),
+        ),
+        audio_format(
+            "alac",
+            "ALAC",
+            &[],
+            &["audio/mp4"],
+            "m4a",
+            "alac",
+            Some("ipod"),
+        ),
+        audio_format(
+            "ac3",
+            "AC3",
+            &["ac3"],
+            &["audio/ac3"],
+            "ac3",
+            "ac3",
+            Some("ac3"),
+        ),
+        video_format(
+            "mp4",
+            "MP4",
+            &["mp4"],
+            &["video/mp4"],
+            "mp4",
+            "h264",
+            "aac",
+            Some("mp4"),
+        ),
+        video_format(
+            "mkv",
+            "MKV",
+            &["mkv"],
+            &["video/x-matroska"],
+            "mkv",
+            "h264",
+            "aac",
+            Some("matroska"),
+        ),
+        video_format(
+            "webm",
+            "WebM",
+            &["webm"],
+            &["video/webm"],
+            "webm",
+            "vp9",
+            "opus",
+            Some("webm"),
+        ),
+        video_format(
+            "mov",
+            "MOV",
+            &["mov"],
+            &["video/quicktime"],
+            "mov",
+            "h264",
+            "aac",
+            Some("mov"),
+        ),
+        video_format(
+            "avi",
+            "AVI",
+            &["avi"],
+            &["video/x-msvideo"],
+            "avi",
+            "mpeg4",
+            "mp3",
+            Some("avi"),
+        ),
+        video_format(
+            "m4v",
+            "M4V",
+            &["m4v"],
+            &["video/x-m4v"],
+            "m4v",
+            "h264",
+            "aac",
+            Some("ipod"),
+        ),
+        video_format(
+            "mpeg",
+            "MPEG / MPG",
+            &["mpeg", "mpg"],
+            &["video/mpeg"],
+            "mpeg",
+            "mpeg2",
+            "mp2",
+            Some("mpeg"),
+        ),
+        video_format(
+            "ogv",
+            "OGV",
+            &["ogv"],
+            &["video/ogg"],
+            "ogv",
+            "theora",
+            "vorbis",
+            Some("ogg"),
+        ),
+        video_format(
+            "ts",
+            "TS / MTS / M2TS",
+            &["ts", "mts", "m2ts"],
+            &["video/mp2t"],
+            "ts",
+            "mpeg2",
+            "mp2",
+            Some("mpegts"),
+        ),
+    ]
+}
+
+pub fn conversion_capabilities() -> ConversionCapabilities {
+    let targets_by_source_category = [
+        MediaCategory::Image,
+        MediaCategory::Audio,
+        MediaCategory::Video,
+    ]
+    .into_iter()
+    .map(|category| {
+        (
+            category_name(&category).to_string(),
+            target_formats_for_category(&category),
+        )
+    })
+    .collect::<BTreeMap<_, _>>();
+    ConversionCapabilities {
+        formats: built_in_formats(),
+        codecs: built_in_codecs(),
+        targets_by_source_category,
+    }
+}
+
+pub fn detect_format(extension: &str) -> Option<FormatDefinition> {
+    let extension = extension.trim_start_matches('.').to_ascii_lowercase();
+    built_in_formats().into_iter().find(|format| {
+        format
+            .extensions
+            .iter()
+            .any(|candidate| candidate == &extension)
+    })
+}
+
+pub fn format_by_id(id: &str) -> Option<FormatDefinition> {
     built_in_formats()
         .into_iter()
-        .find(|format| format.id == source_format)
-        .map(|format| format.output_formats)
-        .unwrap_or_default()
+        .find(|format| format.id == id)
+}
+
+pub fn target_formats_for(source_format: &str) -> Vec<String> {
+    let Some(source) = detect_format(source_format).or_else(|| format_by_id(source_format)) else {
+        return Vec::new();
+    };
+    target_formats_for_category(&source.category)
+        .into_iter()
+        .filter(|target| target != &source.id)
+        .collect()
+}
+
+pub fn target_formats_for_category(category: &MediaCategory) -> Vec<String> {
+    built_in_formats()
+        .into_iter()
+        .filter(|format| match category {
+            MediaCategory::Image => format.category == MediaCategory::Image,
+            MediaCategory::Audio => format.category == MediaCategory::Audio,
+            MediaCategory::Video => {
+                format.category == MediaCategory::Video || format.category == MediaCategory::Audio
+            }
+        })
+        .map(|format| format.id)
+        .collect()
+}
+
+pub fn is_conversion_supported(source: &MediaCategory, target_id: &str) -> bool {
+    target_formats_for_category(source)
+        .iter()
+        .any(|target| target == target_id)
+}
+
+pub fn ffmpeg_args_for(source: &MediaCategory, target_id: &str) -> Option<Vec<String>> {
+    if !is_conversion_supported(source, target_id) {
+        return None;
+    }
+    let format = format_by_id(target_id)?;
+    let codecs = built_in_codecs();
+    let mut args = Vec::new();
+    match format.category {
+        MediaCategory::Image => {
+            args.extend(["-frames:v".into(), "1".into()]);
+            append_codec(
+                &mut args,
+                "-c:v",
+                format.default_video_codec.as_deref()?,
+                &codecs,
+            )?;
+        }
+        MediaCategory::Audio => {
+            args.push("-vn".into());
+            append_codec(
+                &mut args,
+                "-c:a",
+                format.default_audio_codec.as_deref()?,
+                &codecs,
+            )?;
+        }
+        MediaCategory::Video => {
+            append_codec(
+                &mut args,
+                "-c:v",
+                format.default_video_codec.as_deref()?,
+                &codecs,
+            )?;
+            append_codec(
+                &mut args,
+                "-c:a",
+                format.default_audio_codec.as_deref()?,
+                &codecs,
+            )?;
+            if matches!(format.id.as_str(), "mp4" | "mov" | "m4v") {
+                args.extend(["-movflags".into(), "+faststart".into()]);
+            }
+        }
+    }
+    if let Some(container) = format.ffmpeg_format {
+        args.extend(["-f".into(), container]);
+    }
+    Some(args)
+}
+
+fn append_codec(
+    args: &mut Vec<String>,
+    flag: &str,
+    codec_id: &str,
+    codecs: &[CodecDefinition],
+) -> Option<()> {
+    let codec = codecs.iter().find(|codec| codec.id == codec_id)?;
+    args.extend([flag.into(), codec.ffmpeg_encoder.clone()]);
+    args.extend(codec.default_args.clone());
+    Some(())
+}
+
+fn category_name(category: &MediaCategory) -> &'static str {
+    match category {
+        MediaCategory::Image => "image",
+        MediaCategory::Video => "video",
+        MediaCategory::Audio => "audio",
+    }
+}
+
+fn video_codec(id: &str, encoder: &str, args: &[&str]) -> CodecDefinition {
+    codec(id, CodecKind::Video, encoder, args)
+}
+fn audio_codec(id: &str, encoder: &str, args: &[&str]) -> CodecDefinition {
+    codec(id, CodecKind::Audio, encoder, args)
+}
+fn codec(id: &str, kind: CodecKind, encoder: &str, args: &[&str]) -> CodecDefinition {
+    CodecDefinition {
+        id: id.into(),
+        kind,
+        ffmpeg_encoder: encoder.into(),
+        default_args: args.iter().map(|arg| (*arg).into()).collect(),
+    }
+}
+
+fn image_format(
+    id: &str,
+    display_name: &str,
+    extensions: &[&str],
+    mime_types: &[&str],
+    default_extension: &str,
+    video_codec: &str,
+) -> FormatDefinition {
+    format(
+        id,
+        display_name,
+        MediaCategory::Image,
+        extensions,
+        mime_types,
+        default_extension,
+        None,
+        Some(video_codec),
+        None,
+    )
+}
+fn audio_format(
+    id: &str,
+    display_name: &str,
+    extensions: &[&str],
+    mime_types: &[&str],
+    default_extension: &str,
+    audio_codec: &str,
+    ffmpeg_format: Option<&str>,
+) -> FormatDefinition {
+    format(
+        id,
+        display_name,
+        MediaCategory::Audio,
+        extensions,
+        mime_types,
+        default_extension,
+        ffmpeg_format,
+        None,
+        Some(audio_codec),
+    )
+}
+#[allow(clippy::too_many_arguments)]
+fn video_format(
+    id: &str,
+    display_name: &str,
+    extensions: &[&str],
+    mime_types: &[&str],
+    default_extension: &str,
+    video_codec: &str,
+    audio_codec: &str,
+    ffmpeg_format: Option<&str>,
+) -> FormatDefinition {
+    format(
+        id,
+        display_name,
+        MediaCategory::Video,
+        extensions,
+        mime_types,
+        default_extension,
+        ffmpeg_format,
+        Some(video_codec),
+        Some(audio_codec),
+    )
+}
+#[allow(clippy::too_many_arguments)]
+fn format(
+    id: &str,
+    display_name: &str,
+    category: MediaCategory,
+    extensions: &[&str],
+    mime_types: &[&str],
+    default_extension: &str,
+    ffmpeg_format: Option<&str>,
+    default_video_codec: Option<&str>,
+    default_audio_codec: Option<&str>,
+) -> FormatDefinition {
+    FormatDefinition {
+        id: id.into(),
+        display_name: display_name.into(),
+        category,
+        extensions: extensions.iter().map(|value| (*value).into()).collect(),
+        mime_types: mime_types.iter().map(|value| (*value).into()).collect(),
+        default_extension: default_extension.into(),
+        ffmpeg_format: ffmpeg_format.map(str::to_string),
+        default_video_codec: default_video_codec.map(str::to_string),
+        default_audio_codec: default_audio_codec.map(str::to_string),
+    }
 }

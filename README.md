@@ -1,7 +1,7 @@
 # Recast
 
-[![CI](https://github.com/imustacho/offconvert/actions/workflows/ci.yml/badge.svg)](https://github.com/imustacho/offconvert/actions/workflows/ci.yml)
-[![Release](https://github.com/imustacho/offconvert/actions/workflows/release.yml/badge.svg)](https://github.com/imustacho/offconvert/actions/workflows/release.yml)
+[![CI](https://github.com/imustacho/recast/actions/workflows/ci.yml/badge.svg)](https://github.com/imustacho/recast/actions/workflows/ci.yml)
+[![Release](https://github.com/imustacho/recast/actions/workflows/release.yml/badge.svg)](https://github.com/imustacho/recast/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-0f766e.svg)](LICENSE)
 
 Private, offline-first file conversion for Windows, macOS, and Linux. Recast
@@ -20,6 +20,22 @@ desktop application, CLI, and operating-system integrations.
 - Reusable Rust core and command-line interface
 - Preset-driven conversion plans and queue management
 - Release automation for Windows, macOS, and Linux
+
+## Supported formats
+
+All conversions use the bundled FFmpeg engine. Formats (file types and
+containers) are modeled separately from their default codecs, so codec choices
+can evolve without duplicating the format capability catalogue.
+
+| Media | Accepted formats | Default output codecs |
+| --- | --- | --- |
+| Image | JPG/JPEG, PNG, WebP, BMP, TIFF, GIF, AVIF | MJPEG, PNG, libwebp, BMP, TIFF, GIF, AV1 |
+| Audio | MP3, WAV, FLAC, AAC, M4A, OGG, Opus, AIFF, ALAC, AC3 | libmp3lame, PCM, FLAC, AAC, Vorbis, Opus, ALAC, AC3 |
+| Video | MP4, MKV, WebM, MOV, AVI, M4V, MPEG/MPG, OGV, TS/MTS/M2TS | H.264/AAC, VP9/Opus, MPEG-4, MPEG-2, Theora/Vorbis |
+
+Image inputs can target every image format, and audio inputs can target every
+audio format. Video inputs can target every video format and every audio format,
+which enables direct video-to-audio extraction.
 
 ## Development
 
@@ -67,6 +83,6 @@ publish them to GitHub Releases. Maintainer instructions are in
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Report
 security issues privately as described in [SECURITY.md](SECURITY.md).
 
-Recast is licensed under the [MIT License](LICENSE). FFmpeg, ImageMagick,
-and other bundled tools retain their own licenses; see
+Recast is licensed under the [MIT License](LICENSE). FFmpeg and other bundled
+tools retain their own licenses; see
 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).

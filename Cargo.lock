@@ -2798,7 +2798,7 @@ checksum = "20675572f6f24e9e76ef639bc5552774ed45f1c30e2951e1e99c59888861c539"
 
 [[package]]
 name = "recast-cli"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "anyhow",
  "clap",
@@ -2811,7 +2811,7 @@ dependencies = [
 
 [[package]]
 name = "recast-core"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2828,7 +2828,7 @@ dependencies = [
 
 [[package]]
 name = "recast-desktop"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "recast-core",
  "recast-engines",
@@ -2848,7 +2848,7 @@ dependencies = [
 
 [[package]]
 name = "recast-engines"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "recast-models",
  "serde",
@@ -2857,7 +2857,7 @@ dependencies = [
 
 [[package]]
 name = "recast-models"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "chrono",
  "serde",
@@ -3303,7 +3303,7 @@ dependencies = [
 
 [[package]]
 name = "shell-integration"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "thiserror 2.0.18",
  "winreg",

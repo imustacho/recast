@@ -1,6 +1,6 @@
 use chrono::Utc;
-use recast_models::{ConversionJob, JobStatus};
 use parking_lot::Mutex;
+use recast_models::{ConversionJob, JobStatus};
 use std::collections::VecDeque;
 use std::path::PathBuf;
 use std::sync::Arc;

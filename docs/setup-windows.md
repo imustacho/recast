@@ -7,8 +7,7 @@
 - Microsoft Visual Studio Build Tools with C++ workload
 - Tauri prerequisites
 - WebView2 runtime
-- Bundled FFmpeg and FFprobe binaries under `binaries/windows/`
-- Bundled ImageMagick binaries under `binaries/windows/`
+- Bundled FFmpeg binary under `binaries/windows/`
 
 ## Install steps
 
@@ -22,8 +21,6 @@ rustup target add x86_64-pc-windows-msvc
 
 ```text
 binaries/windows/ffmpeg.exe
-binaries/windows/ffprobe.exe
-binaries/windows/magick.exe
 ```
 
 ## Development commands

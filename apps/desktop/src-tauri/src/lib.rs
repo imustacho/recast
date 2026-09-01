@@ -1,7 +1,12 @@
+use recast_core::formats::{
+    conversion_capabilities, ffmpeg_args_for, format_by_id, is_conversion_supported,
+};
 use recast_core::inspection::inspect_path;
 use recast_core::paths::resolve_output_collision;
 use recast_core::queue::QueueState;
-use recast_models::{ConversionJob, ConversionRequest, MediaCategory, OverwritePolicy};
+use recast_models::{
+    ConversionCapabilities, ConversionJob, ConversionRequest, MediaCategory, OverwritePolicy,
+};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
@@ -33,6 +38,11 @@ struct LaunchRequest {
     paths: Vec<String>,
     target_format: Option<String>,
     auto_start: bool,
+}
+
+#[tauri::command]
+fn get_conversion_capabilities() -> ConversionCapabilities {
+    conversion_capabilities()
 }
 
 #[tauri::command]
@@ -92,9 +102,16 @@ async fn convert_one(ffmpeg: &Path, input: &Path, request: &ConversionRequest) -
         Err(error) => return failure(error.to_string()),
     };
 
-    if let Err(message) = validate_target(&media.category, &request.target_format) {
-        return failure(message);
+    if !is_conversion_supported(&media.category, &request.target_format) {
+        return failure(format!(
+            "{} files cannot be converted to {}",
+            category_name(&media.category),
+            request.target_format
+        ));
     }
+    let Some(target) = format_by_id(&request.target_format) else {
+        return failure(format!("Unknown target format: {}", request.target_format));
+    };
 
     let output_directory = request
         .output_directory
@@ -108,7 +125,7 @@ async fn convert_one(ffmpeg: &Path, input: &Path, request: &ConversionRequest) -
         .file_stem()
         .and_then(|value| value.to_str())
         .unwrap_or("output");
-    let requested_output = output_directory.join(format!("{stem}.{}", request.target_format));
+    let requested_output = output_directory.join(format!("{stem}.{}", target.default_extension));
     let output_path = match resolve_output_collision(&requested_output, &request.overwrite_policy) {
         Ok(path) => path,
         Err(error) => return failure(error.to_string()),
@@ -122,7 +139,10 @@ async fn convert_one(ffmpeg: &Path, input: &Path, request: &ConversionRequest) -
         command.arg("-n");
     }
     command.arg("-i").arg(input);
-    add_conversion_args(&mut command, &media.category, &request.target_format);
+    let Some(conversion_args) = ffmpeg_args_for(&media.category, &request.target_format) else {
+        return failure(format!("No FFmpeg mapping for {}", request.target_format));
+    };
+    command.args(conversion_args);
     command.arg(&output_path);
 
     match command.output().await {
@@ -144,73 +164,6 @@ async fn convert_one(ffmpeg: &Path, input: &Path, request: &ConversionRequest) -
             "FFmpeg could not be started at '{}': {error}",
             ffmpeg.display()
         )),
-    }
-}
-
-fn validate_target(category: &MediaCategory, target: &str) -> Result<(), String> {
-    let supported = match category {
-        MediaCategory::Image => ["jpg", "jpeg", "png", "webp", "bmp", "gif"].as_slice(),
-        MediaCategory::Video => ["mp4", "mkv", "webm", "gif", "mp3", "wav"].as_slice(),
-        MediaCategory::Audio => ["mp3", "wav", "flac", "ogg", "m4a"].as_slice(),
-    };
-
-    if supported.contains(&target) {
-        Ok(())
-    } else {
-        Err(format!(
-            "{} files cannot be converted to {target}",
-            category_name(category)
-        ))
-    }
-}
-
-fn add_conversion_args(command: &mut Command, category: &MediaCategory, target: &str) {
-    match (category, target) {
-        (MediaCategory::Image, _) => {
-            command.args(["-frames:v", "1"]);
-        }
-        (MediaCategory::Video, "mp3") => {
-            command.args(["-vn", "-c:a", "libmp3lame", "-q:a", "2"]);
-        }
-        (MediaCategory::Video, "wav") => {
-            command.args(["-vn", "-c:a", "pcm_s16le"]);
-        }
-        (MediaCategory::Video, "webm") => {
-            command.args(["-c:v", "libvpx-vp9", "-c:a", "libopus"]);
-        }
-        (MediaCategory::Video, "gif") => {
-            command.args(["-vf", "fps=12,scale=960:-1:flags=lanczos"]);
-        }
-        (MediaCategory::Video, _) => {
-            command.args([
-                "-c:v",
-                "libx264",
-                "-preset",
-                "medium",
-                "-crf",
-                "23",
-                "-c:a",
-                "aac",
-                "-movflags",
-                "+faststart",
-            ]);
-        }
-        (MediaCategory::Audio, "mp3") => {
-            command.args(["-c:a", "libmp3lame", "-q:a", "2"]);
-        }
-        (MediaCategory::Audio, "m4a") => {
-            command.args(["-c:a", "aac", "-b:a", "192k"]);
-        }
-        (MediaCategory::Audio, "ogg") => {
-            command.args(["-c:a", "libvorbis", "-q:a", "5"]);
-        }
-        (MediaCategory::Audio, "wav") => {
-            command.args(["-c:a", "pcm_s16le"]);
-        }
-        (MediaCategory::Audio, "flac") => {
-            command.args(["-c:a", "flac"]);
-        }
-        (MediaCategory::Audio, _) => {}
     }
 }
 
@@ -304,6 +257,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            get_conversion_capabilities,
             inspect_files,
             queue_conversion,
             convert_files,

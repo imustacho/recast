@@ -27,6 +27,6 @@ instead of moving a published tag.
 
 ## Engine licensing
 
-Before bundling FFmpeg or ImageMagick, fill in `binaries/manifest.json` and
+Before bundling FFmpeg, fill in `binaries/manifest.json` and
 update `THIRD_PARTY_LICENSES.md`. Do not publish unknown or incompatible binary
 builds.

@@ -3,20 +3,15 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { availableTargetFormats } from "../../lib/capabilities";
 import { useAppStore } from "../../lib/store";
 import type {
   ConversionJob,
+  ConversionCapabilities,
   ConversionResult,
   LaunchRequest,
-  MediaCategory,
   MediaFile,
 } from "../../lib/types";
-
-const formats: Record<MediaCategory, string[]> = {
-  image: ["jpg", "png", "webp", "bmp", "gif"],
-  video: ["mp4", "mkv", "webm", "gif", "mp3", "wav"],
-  audio: ["mp3", "wav", "flac", "ogg", "m4a"],
-};
 
 export function ConvertView() {
   const { t } = useTranslation();
@@ -24,17 +19,17 @@ export function ConvertView() {
   const [isConverting, setIsConverting] = useState(false);
   const [notice, setNotice] = useState<string>();
   const [error, setError] = useState<string>();
+  const [capabilities, setCapabilities] = useState<ConversionCapabilities>();
   const { files, targetFormat, addFiles, setTargetFormat, addJobs, updateJob } =
     useAppStore();
 
   const availableFormats = useMemo(
-    () =>
-      files.length
-        ? formats[files[0].category].filter((format) =>
-            files.every((file) => formats[file.category].includes(format)),
-          )
-        : ["jpg", "png", "webp", "mp4", "mp3"],
-    [files],
+    () => availableTargetFormats(capabilities, files),
+    [capabilities, files],
+  );
+  const formatNames = useMemo(
+    () => new Map(capabilities?.formats.map((format) => [format.id, format.displayName]) ?? []),
+    [capabilities],
   );
 
   const handleDroppedPaths = useEffectEvent(async (paths: string[]) => {
@@ -55,8 +50,15 @@ export function ConvertView() {
   });
 
   useEffect(() => {
+    if (!isTauri()) return;
+    void invoke<ConversionCapabilities>("get_conversion_capabilities")
+      .then(setCapabilities)
+      .catch((reason: unknown) => setError(String(reason)));
+  }, []);
+
+  useEffect(() => {
     if (!availableFormats.includes(targetFormat)) {
-      setTargetFormat(availableFormats[0] ?? "jpg");
+      if (availableFormats[0]) setTargetFormat(availableFormats[0]);
     }
   }, [availableFormats, setTargetFormat, targetFormat]);
 
@@ -173,7 +175,7 @@ export function ConvertView() {
           >
             {availableFormats.map((format) => (
               <option key={format} value={format}>
-                {format.toUpperCase()}
+                {formatNames.get(format) ?? format.toUpperCase()}
               </option>
             ))}
           </select>

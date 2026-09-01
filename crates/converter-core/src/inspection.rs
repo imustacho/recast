@@ -1,5 +1,6 @@
 use crate::errors::CoreError;
-use recast_models::{MediaCategory, MediaInfo};
+use crate::formats::detect_format;
+use recast_models::MediaInfo;
 use std::fs;
 use std::path::Path;
 
@@ -12,19 +13,12 @@ pub fn inspect_path(path: &Path) -> Result<MediaInfo, CoreError> {
         .unwrap_or_default()
         .to_ascii_lowercase();
 
-    let category = match extension.as_str() {
-        "png" | "jpg" | "jpeg" | "webp" | "avif" | "gif" | "bmp" | "tiff" | "ico" => {
-            MediaCategory::Image
-        }
-        "mp4" | "mkv" | "webm" | "mov" | "avi" => MediaCategory::Video,
-        "mp3" | "wav" | "flac" | "ogg" | "aac" | "m4a" | "opus" => MediaCategory::Audio,
-        _ => return Err(CoreError::UnsupportedInput),
-    };
+    let format = detect_format(&extension).ok_or(CoreError::UnsupportedInput)?;
 
     Ok(MediaInfo {
         path: path.to_path_buf(),
-        category,
-        detected_format: extension,
+        category: format.category,
+        detected_format: format.id,
         duration_ms: None,
         width: None,
         height: None,

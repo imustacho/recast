@@ -13,12 +13,41 @@ pub enum MediaCategory {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FormatDefinition {
     pub id: String,
+    pub display_name: String,
     pub category: MediaCategory,
     pub extensions: Vec<String>,
     pub mime_types: Vec<String>,
-    pub output_formats: Vec<String>,
+    pub default_extension: String,
+    pub ffmpeg_format: Option<String>,
+    pub default_video_codec: Option<String>,
+    pub default_audio_codec: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum CodecKind {
+    Video,
+    Audio,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CodecDefinition {
+    pub id: String,
+    pub kind: CodecKind,
+    pub ffmpeg_encoder: String,
+    pub default_args: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConversionCapabilities {
+    pub formats: Vec<FormatDefinition>,
+    pub codecs: Vec<CodecDefinition>,
+    pub targets_by_source_category: BTreeMap<String, Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

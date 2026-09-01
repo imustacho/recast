@@ -64,11 +64,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.event.inputs.tag || github.ref_name }}
-          releaseName: OffConvert ${{ github.event.inputs.tag || github.ref_name }}
+          releaseName: Recast ${{ github.event.inputs.tag || github.ref_name }}
           releaseBody: |
-            Install OffConvert using the package for your operating system and architecture.
+            Install Recast using the package for your operating system and architecture.
 
-            This is an early development preview. Core image, video, and audio conversions work through the bundled FFmpeg engine. Advanced presets, history, and cancellation are not complete yet.
+            This release expands the FFmpeg-backed image, audio, and video format catalogue, adds video-to-audio extraction, and drives the desktop format selector from centralized capabilities.
+
+            See the README for the complete supported format and default codec matrix.
 
             Linux builds currently inherit a medium-severity glib 0.18 advisory through Tauri's GTK dependency chain. Avoid processing untrusted inputs on Linux until the upstream dependency is updated.
           releaseDraft: false
