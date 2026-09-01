@@ -1,10 +1,10 @@
 [package]
-name = "offconvert-engines"
+name = "recast-engines"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
-offconvert-models = { path = "../converter-models" }
+recast-models = { path = "../converter-models" }
 serde.workspace = true
 thiserror.workspace = true

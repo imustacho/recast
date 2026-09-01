@@ -1,20 +1,20 @@
 {
-  "name": "offconvert",
+  "name": "recast",
   "private": true,
   "version": "0.1.3",
   "workspaces": [
     "apps/desktop"
   ],
   "scripts": {
-    "dev": "npm --workspace @offconvert/desktop run dev",
-    "build": "npm --workspace @offconvert/desktop run build",
-    "lint": "npm --workspace @offconvert/desktop run lint",
-    "test": "npm --workspace @offconvert/desktop run test",
-    "typecheck": "npm --workspace @offconvert/desktop run typecheck",
+    "dev": "npm --workspace @recast/desktop run dev",
+    "build": "npm --workspace @recast/desktop run build",
+    "lint": "npm --workspace @recast/desktop run lint",
+    "test": "npm --workspace @recast/desktop run test",
+    "typecheck": "npm --workspace @recast/desktop run typecheck",
     "check": "npm run typecheck && npm run lint && npm run test && npm run build",
-    "prepare:engines": "npm --workspace @offconvert/desktop run prepare:engines",
-    "tauri:dev": "npm --workspace @offconvert/desktop run tauri dev",
-    "tauri:build": "npm --workspace @offconvert/desktop run tauri build"
+    "prepare:engines": "npm --workspace @recast/desktop run prepare:engines",
+    "tauri:dev": "npm --workspace @recast/desktop run tauri dev",
+    "tauri:build": "npm --workspace @recast/desktop run tauri build"
   },
   "engines": {
     "node": ">=24"

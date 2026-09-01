@@ -1,6 +1,6 @@
-use offconvert_core::formats::target_formats_for;
-use offconvert_core::paths::{resolve_output_collision, temp_output_path};
-use offconvert_models::OverwritePolicy;
+use recast_core::formats::target_formats_for;
+use recast_core::paths::{resolve_output_collision, temp_output_path};
+use recast_models::OverwritePolicy;
 use std::fs;
 
 #[test]
@@ -13,12 +13,12 @@ fn png_exposes_expected_targets() {
 #[test]
 fn temp_output_suffix_is_appended() {
     let path = temp_output_path(std::path::Path::new("sample.mp4"));
-    assert_eq!(path.to_string_lossy(), "sample.mp4.offconvert-temp");
+    assert_eq!(path.to_string_lossy(), "sample.mp4.recast-temp");
 }
 
 #[test]
 fn rename_policy_avoids_existing_file() {
-    let root = std::env::temp_dir().join(format!("offconvert-test-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!("recast-test-{}", std::process::id()));
     let _ = fs::create_dir_all(&root);
     let file = root.join("photo.jpg");
     fs::write(&file, b"existing").expect("write fixture");

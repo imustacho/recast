@@ -1,6 +1,6 @@
-# Contributing to OffConvert
+# Contributing to Recast
 
-Thank you for improving OffConvert. Keep pull requests focused and explain the
+Thank you for improving Recast. Keep pull requests focused and explain the
 user-visible reason for each change.
 
 ## Local setup

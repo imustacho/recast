@@ -1,4 +1,4 @@
-# Releasing OffConvert
+# Releasing Recast
 
 Releases are built by GitHub Actions from version tags. The workflow publishes
 the GitHub Release after all platform artifacts are uploaded.
@@ -16,7 +16,7 @@ the GitHub Release after all platform artifacts are uploaded.
 ## Trigger the build
 
 ```bash
-git tag -a vX.Y.Z -m "OffConvert vX.Y.Z"
+git tag -a vX.Y.Z -m "Recast vX.Y.Z"
 git push origin vX.Y.Z
 ```
 

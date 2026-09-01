@@ -1,15 +1,15 @@
-# OffConvert
+# Recast
 
 [![CI](https://github.com/imustacho/offconvert/actions/workflows/ci.yml/badge.svg)](https://github.com/imustacho/offconvert/actions/workflows/ci.yml)
 [![Release](https://github.com/imustacho/offconvert/actions/workflows/release.yml/badge.svg)](https://github.com/imustacho/offconvert/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-0f766e.svg)](LICENSE)
 
-Private, offline-first file conversion for Windows, macOS, and Linux. OffConvert
+Private, offline-first file conversion for Windows, macOS, and Linux. Recast
 uses Tauri 2, React, TypeScript, and Rust, with a reusable core shared by the
 desktop application, CLI, and operating-system integrations.
 
 > [!IMPORTANT]
-> OffConvert is currently an early development release. Core image, video, and
+> Recast is currently an early development release. Core image, video, and
 > audio conversions work through bundled FFmpeg, but advanced presets, history,
 > cancellation, and some platform integrations are still being implemented.
 
@@ -67,6 +67,6 @@ publish them to GitHub Releases. Maintainer instructions are in
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Report
 security issues privately as described in [SECURITY.md](SECURITY.md).
 
-OffConvert is licensed under the [MIT License](LICENSE). FFmpeg, ImageMagick,
+Recast is licensed under the [MIT License](LICENSE). FFmpeg, ImageMagick,
 and other bundled tools retain their own licenses; see
 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).

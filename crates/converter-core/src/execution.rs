@@ -2,8 +2,8 @@ use crate::errors::CoreError;
 use crate::inspection::inspect_path;
 use crate::paths::{resolve_output_collision, temp_output_path};
 use crate::requests::validate_request;
-use offconvert_engines::EngineSet;
-use offconvert_models::{ConversionPlan, ConversionRequest, MediaCategory};
+use recast_engines::EngineSet;
+use recast_models::{ConversionPlan, ConversionRequest, MediaCategory};
 use std::path::Path;
 
 pub fn build_plan(

@@ -1,4 +1,4 @@
-use offconvert_models::ProgressEvent;
+use recast_models::ProgressEvent;
 use uuid::Uuid;
 
 pub fn parse_ffmpeg_progress(job_id: Uuid, line: &str) -> Option<ProgressEvent> {

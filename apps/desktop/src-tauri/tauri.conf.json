@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "OffConvert",
+  "productName": "Recast",
   "version": "0.1.3",
-  "identifier": "io.github.imustacho.offconvert",
+  "identifier": "io.github.imustacho.recast",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "OffConvert",
+        "title": "Recast",
         "width": 1280,
         "height": 840,
         "resizable": true

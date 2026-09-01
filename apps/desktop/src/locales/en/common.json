@@ -1,5 +1,5 @@
 {
-  "appName": "OffConvert",
+  "appName": "Recast",
   "convert": "Convert",
   "queue": "Queue",
   "presets": "Presets",
@@ -16,7 +16,7 @@
   "noFiles": "Select or drop files to begin",
   "converting": "Converting...",
   "completed": "Completed",
-  "conversionStarted": "Conversion started. Keep OffConvert open until it finishes.",
+  "conversionStarted": "Conversion started. Keep Recast open until it finishes.",
   "conversionSummary": "{{succeeded}} completed, {{failed}} failed.",
   "conversionFailed": "Conversion failed",
   "showOutput": "Show output",

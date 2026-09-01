@@ -1,6 +1,6 @@
 # Third-Party Licenses
 
-OffConvert is MIT-licensed, but bundled binaries keep their own licenses.
+Recast is MIT-licensed, but bundled binaries keep their own licenses.
 
 ## FFmpeg
 
@@ -11,7 +11,7 @@ OffConvert is MIT-licensed, but bundled binaries keep their own licenses.
   under GPL-3.0-or-later. The exact binary license text is included alongside
   the downloaded artifact by `ffmpeg-static`.
 - Relationship: FFmpeg is executed as a separate command-line program and is
-  not linked into OffConvert.
+  not linked into Recast.
 
 ## ImageMagick
 

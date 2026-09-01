@@ -1,16 +1,16 @@
 use anyhow::{Context, Result};
 use clap::{Args, Parser, Subcommand, ValueEnum};
-use offconvert_core::execution::build_plan;
-use offconvert_core::formats::built_in_formats;
-use offconvert_core::inspection::inspect_path;
-use offconvert_core::presets::load_presets;
-use offconvert_engines::EngineSet;
-use offconvert_models::{ConversionRequest, OverwritePolicy};
+use recast_core::execution::build_plan;
+use recast_core::formats::built_in_formats;
+use recast_core::inspection::inspect_path;
+use recast_core::presets::load_presets;
+use recast_engines::EngineSet;
+use recast_models::{ConversionRequest, OverwritePolicy};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 #[derive(Parser)]
-#[command(name = "offconvert")]
+#[command(name = "recast")]
 #[command(about = "Offline-first media converter CLI")]
 struct Cli {
     #[command(subcommand)]

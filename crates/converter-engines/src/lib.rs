@@ -1,4 +1,4 @@
-use offconvert_models::MediaCategory;
+use recast_models::MediaCategory;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use thiserror::Error;

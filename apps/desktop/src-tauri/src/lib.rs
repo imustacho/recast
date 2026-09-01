@@ -1,7 +1,7 @@
-use offconvert_core::inspection::inspect_path;
-use offconvert_core::paths::resolve_output_collision;
-use offconvert_core::queue::QueueState;
-use offconvert_models::{ConversionJob, ConversionRequest, MediaCategory, OverwritePolicy};
+use recast_core::inspection::inspect_path;
+use recast_core::paths::resolve_output_collision;
+use recast_core::queue::QueueState;
+use recast_models::{ConversionJob, ConversionRequest, MediaCategory, OverwritePolicy};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
@@ -298,7 +298,7 @@ pub fn run() {
             #[cfg(windows)]
             if let Ok(executable) = std::env::current_exe() {
                 if let Err(error) = shell_integration::install_windows_context_menu(&executable) {
-                    eprintln!("Could not install OffConvert context menu: {error}");
+                    eprintln!("Could not install Recast context menu: {error}");
                 }
             }
             Ok(())

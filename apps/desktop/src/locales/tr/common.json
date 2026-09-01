@@ -1,5 +1,5 @@
 {
-  "appName": "OffConvert",
+  "appName": "Recast",
   "convert": "Donustur",
   "queue": "Kuyruk",
   "presets": "Hazir Ayarlar",
@@ -16,7 +16,7 @@
   "noFiles": "Baslamak icin dosya secin veya surukleyin",
   "converting": "Donusturuluyor...",
   "completed": "Tamamlandi",
-  "conversionStarted": "Donusturme basladi. Bitene kadar OffConvert'i acik tutun.",
+  "conversionStarted": "Donusturme basladi. Bitene kadar Recast'i acik tutun.",
   "conversionSummary": "{{succeeded}} tamamlandi, {{failed}} basarisiz.",
   "conversionFailed": "Donusturme basarisiz",
   "showOutput": "Ciktiyi goster",

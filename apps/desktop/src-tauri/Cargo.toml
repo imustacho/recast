@@ -1,20 +1,20 @@
 [package]
-name = "offconvert-desktop"
+name = "recast-desktop"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [lib]
-name = "offconvert_desktop_lib"
+name = "recast_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2.0.0", features = [] }
 
 [dependencies]
-offconvert-core = { path = "../../../crates/converter-core" }
-offconvert-engines = { path = "../../../crates/converter-engines" }
-offconvert-models = { path = "../../../crates/converter-models" }
+recast-core = { path = "../../../crates/converter-core" }
+recast-engines = { path = "../../../crates/converter-engines" }
+recast-models = { path = "../../../crates/converter-models" }
 shell-integration = { path = "../../../crates/shell-integration" }
 serde.workspace = true
 serde_json.workspace = true

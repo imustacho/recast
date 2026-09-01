@@ -1,4 +1,4 @@
-# OffConvert Windows Development Setup
+# Recast Windows Development Setup
 
 ## Required tools
 
@@ -46,7 +46,7 @@ Installers are written below `target/release/bundle/`.
 
 - Release installers bundle FFmpeg; local Tauri builds prepare it from the
   `ffmpeg-static` npm package before compilation.
-- OffConvert installs its per-user Windows context menu when the app starts.
-  On Windows 11, open **Show more options** to see the classic OffConvert menu.
+- Recast installs its per-user Windows context menu when the app starts.
+  On Windows 11, open **Show more options** to see the classic Recast menu.
 - The sidebar action **Install right-click menu** can repair the registry entry
   without administrator privileges.

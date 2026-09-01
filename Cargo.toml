@@ -13,7 +13,7 @@ resolver = "2"
 edition = "2021"
 license = "MIT"
 version = "0.1.3"
-authors = ["OffConvert contributors"]
+authors = ["Recast contributors"]
 
 [workspace.dependencies]
 anyhow = "1.0"

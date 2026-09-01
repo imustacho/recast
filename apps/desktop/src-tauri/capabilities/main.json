@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main-capability",
-  "description": "Permissions required by the OffConvert main window.",
+  "description": "Permissions required by the Recast main window.",
   "windows": ["main"],
   "permissions": [
     "core:default",

@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-OffConvert is currently pre-1.0. Security fixes are applied to the latest
+Recast is currently pre-1.0. Security fixes are applied to the latest
 published release only.
 
 ## Reporting a vulnerability

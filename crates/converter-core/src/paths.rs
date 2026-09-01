@@ -1,13 +1,13 @@
 use crate::errors::CoreError;
-use offconvert_models::OverwritePolicy;
+use recast_models::OverwritePolicy;
 use std::path::{Path, PathBuf};
 
 pub fn temp_output_path(final_output: &Path) -> PathBuf {
     let file_name = final_output
         .file_name()
         .and_then(|name| name.to_str())
-        .map(|name| format!("{name}.offconvert-temp"))
-        .unwrap_or_else(|| "output.offconvert-temp".into());
+        .map(|name| format!("{name}.recast-temp"))
+        .unwrap_or_else(|| "output.recast-temp".into());
     final_output.with_file_name(file_name)
 }
 

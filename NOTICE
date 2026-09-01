@@ -1,2 +1,2 @@
-OffConvert bundles and interoperates with third-party command-line tools whose
+Recast bundles and interoperates with third-party command-line tools whose
 licenses are documented in THIRD_PARTY_LICENSES.md and binaries/manifest.json.

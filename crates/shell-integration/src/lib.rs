@@ -10,7 +10,7 @@ pub enum ShellIntegrationError {
 }
 
 #[cfg(windows)]
-const MENU_KEY: &str = r"Software\Classes\*\shell\OffConvert";
+const MENU_KEY: &str = r"Software\Classes\*\shell\Recast";
 
 #[cfg(windows)]
 pub fn install_windows_context_menu(exe_path: &Path) -> Result<(), ShellIntegrationError> {
@@ -19,12 +19,12 @@ pub fn install_windows_context_menu(exe_path: &Path) -> Result<(), ShellIntegrat
 
     let current_user = RegKey::predef(HKEY_CURRENT_USER);
     let (menu, _) = current_user.create_subkey(MENU_KEY)?;
-    menu.set_value("MUIVerb", &"OffConvert")?;
+    menu.set_value("MUIVerb", &"Recast")?;
     menu.set_value("Icon", &exe_path.display().to_string())?;
     menu.set_value("SubCommands", &"")?;
 
     let (commands, _) = menu.create_subkey("shell")?;
-    add_command(&commands, "00-open", "Open in OffConvert", exe_path, None)?;
+    add_command(&commands, "00-open", "Open in Recast", exe_path, None)?;
     add_command(&commands, "10-jpg", "Convert to JPG", exe_path, Some("jpg"))?;
     add_command(&commands, "20-png", "Convert to PNG", exe_path, Some("png"))?;
     add_command(

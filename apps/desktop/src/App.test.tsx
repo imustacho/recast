@@ -6,7 +6,7 @@ import "./lib/i18n";
 describe("App", () => {
   it("renders the converter shell", () => {
     render(<App />);
-    expect(screen.getByText("OffConvert")).toBeInTheDocument();
+    expect(screen.getByText("Recast")).toBeInTheDocument();
     expect(screen.getByText("Select files")).toBeInTheDocument();
     expect(screen.getByText("Convert now")).toBeInTheDocument();
     expect(screen.queryByText("Install right-click menu")).not.toBeInTheDocument();

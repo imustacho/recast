@@ -1,6 +1,6 @@
 use crate::errors::CoreError;
 use crate::formats::target_formats_for;
-use offconvert_models::ConversionRequest;
+use recast_models::ConversionRequest;
 
 pub fn validate_request(request: &ConversionRequest) -> Result<(), CoreError> {
     if request.input_paths.is_empty() {

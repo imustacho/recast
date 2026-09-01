@@ -1,5 +1,5 @@
 use crate::errors::CoreError;
-use offconvert_models::{MediaCategory, MediaInfo};
+use recast_models::{MediaCategory, MediaInfo};
 use std::fs;
 use std::path::Path;
 
