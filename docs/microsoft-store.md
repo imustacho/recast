@@ -6,14 +6,15 @@ or WiX `.msi` artifacts produced by the existing Release workflow.
 
 ## Partner Center configuration
 
-Reserve the application in Partner Center before packaging. Copy these three
-values exactly from the product identity page; do not use the marketing name or
-invent substitute values:
+Reserve the application in Partner Center before packaging. Copy the three
+identity values exactly from the product identity page and use the exact
+reserved Store display name; do not invent substitute values:
 
 - `Package/Identity/Name` -> `MICROSOFT_STORE_IDENTITY_NAME`
 - `Package/Identity/Publisher` -> `MICROSOFT_STORE_PUBLISHER`
 - `Package/Properties/PublisherDisplayName` ->
   `MICROSOFT_STORE_PUBLISHER_DISPLAY_NAME`
+- Reserved Store display name -> `MICROSOFT_STORE_DISPLAY_NAME`
 
 The packaging script injects them into
 `apps/desktop/msix/Package.appxmanifest`. It also requires
@@ -21,11 +22,10 @@ The packaging script injects them into
 packages, the major component must be nonzero, every component must be at most
 65535, and the Store-reserved fourth component must be `0`.
 
-For GitHub Actions, create repository **Variables** (not secrets) with the three
-Partner Center values. Run the **Microsoft Store MSIX** workflow manually and
-enter the package version when prompted. The workflow creates an unsigned MSIX
-and stores it as a workflow artifact; it does not create a Git tag or GitHub
-Release.
+For GitHub Actions, create repository **Variables** (not secrets) with these
+four values. Run the **Microsoft Store MSIX** workflow manually and enter the
+package version when prompted. The workflow creates an unsigned MSIX and stores
+it as a workflow artifact; it does not create a Git tag or GitHub Release.
 
 ## Local Store package build
 
@@ -43,6 +43,7 @@ PowerShell session:
 $env:MICROSOFT_STORE_IDENTITY_NAME = "<Package/Identity/Name>"
 $env:MICROSOFT_STORE_PUBLISHER = "<Package/Identity/Publisher>"
 $env:MICROSOFT_STORE_PUBLISHER_DISPLAY_NAME = "<PublisherDisplayName>"
+$env:MICROSOFT_STORE_DISPLAY_NAME = "<Reserved Store display name>"
 $env:MICROSOFT_STORE_VERSION = "<Major.Minor.Build.0>"
 npm run pack:msix
 ```

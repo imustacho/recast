@@ -12,7 +12,7 @@
     ProcessorArchitecture="x64" />
 
   <Properties>
-    <DisplayName>Recast</DisplayName>
+    <DisplayName>__MICROSOFT_STORE_DISPLAY_NAME__</DisplayName>
     <PublisherDisplayName>__PARTNER_CENTER_PUBLISHER_DISPLAY_NAME__</PublisherDisplayName>
     <Description>Private, offline-first image, audio, and video conversion.</Description>
     <Logo>Assets\StoreLogo.png</Logo>
@@ -36,7 +36,7 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="Recast"
+        DisplayName="__MICROSOFT_STORE_DISPLAY_NAME__"
         Description="Private, offline-first file conversion."
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"

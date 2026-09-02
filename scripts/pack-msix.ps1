@@ -36,6 +36,7 @@ $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $packageIdentityName = Require-EnvironmentValue "MICROSOFT_STORE_IDENTITY_NAME"
 $publisher = Require-EnvironmentValue "MICROSOFT_STORE_PUBLISHER"
 $publisherDisplayName = Require-EnvironmentValue "MICROSOFT_STORE_PUBLISHER_DISPLAY_NAME"
+$storeDisplayName = Require-EnvironmentValue "MICROSOFT_STORE_DISPLAY_NAME"
 $storeVersion = Require-EnvironmentValue "MICROSOFT_STORE_VERSION"
 
 if ($storeVersion -notmatch "^(\d+)\.(\d+)\.(\d+)\.(\d+)$") {
@@ -109,17 +110,22 @@ Copy-Item -LiteralPath $manifestTemplate -Destination $manifestPath
 [xml]$manifest = Get-Content -LiteralPath $manifestPath -Raw
 $namespace = New-Object System.Xml.XmlNamespaceManager($manifest.NameTable)
 $namespace.AddNamespace("foundation", "http://schemas.microsoft.com/appx/manifest/foundation/windows10")
+$namespace.AddNamespace("uap", "http://schemas.microsoft.com/appx/manifest/uap/windows10")
 $identity = $manifest.SelectSingleNode("/foundation:Package/foundation:Identity", $namespace)
+$displayNameNode = $manifest.SelectSingleNode("/foundation:Package/foundation:Properties/foundation:DisplayName", $namespace)
 $publisherDisplayNameNode = $manifest.SelectSingleNode("/foundation:Package/foundation:Properties/foundation:PublisherDisplayName", $namespace)
+$visualElements = $manifest.SelectSingleNode("/foundation:Package/foundation:Applications/foundation:Application/uap:VisualElements", $namespace)
 
-if (-not $identity -or -not $publisherDisplayNameNode) {
-  throw "Package.appxmanifest does not contain the required Identity and PublisherDisplayName nodes."
+if (-not $identity -or -not $displayNameNode -or -not $publisherDisplayNameNode -or -not $visualElements) {
+  throw "Package.appxmanifest does not contain the required identity and display-name nodes."
 }
 
 $identity.SetAttribute("Name", $packageIdentityName)
 $identity.SetAttribute("Publisher", $publisher)
 $identity.SetAttribute("Version", $storeVersion)
+$displayNameNode.InnerText = $storeDisplayName
 $publisherDisplayNameNode.InnerText = $publisherDisplayName
+$visualElements.SetAttribute("DisplayName", $storeDisplayName)
 $manifest.Save($manifestPath)
 
 $logoSource = Join-Path $repositoryRoot "assets\recast.png"
