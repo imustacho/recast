@@ -1,0 +1,53 @@
+name: Microsoft Store MSIX
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_version:
+        description: Store package version (Major.Minor.Build.0, for example 1.0.0.0)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build unsigned Store MSIX (x64)
+    runs-on: windows-latest
+    env:
+      MICROSOFT_STORE_IDENTITY_NAME: ${{ vars.MICROSOFT_STORE_IDENTITY_NAME }}
+      MICROSOFT_STORE_PUBLISHER: ${{ vars.MICROSOFT_STORE_PUBLISHER }}
+      MICROSOFT_STORE_PUBLISHER_DISPLAY_NAME: ${{ vars.MICROSOFT_STORE_PUBLISHER_DISPLAY_NAME }}
+      MICROSOFT_STORE_VERSION: ${{ inputs.package_version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: . -> target
+
+      - name: Setup winapp CLI
+        uses: microsoft/setup-WinAppCli@v0.1
+
+      - run: npm ci
+
+      - name: Build Store MSIX
+        run: npm run pack:msix
+
+      - name: Upload Store submission package
+        uses: actions/upload-artifact@v7
+        with:
+          name: Recast-Store-MSIX-${{ inputs.package_version }}-x64
+          path: artifacts/msix/*.msix
+          if-no-files-found: error
+          retention-days: 14

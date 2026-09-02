@@ -59,6 +59,16 @@ jobs:
           workspaces: . -> target
 
       - run: npm ci
+
+      - name: Prepare Windows code signing
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        env:
+          WINDOWS_CERTIFICATE_PFX_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_PFX_BASE64 }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+          WINDOWS_TIMESTAMP_URL: ${{ vars.WINDOWS_TIMESTAMP_URL }}
+        run: ./.github/scripts/windows-code-signing.ps1 -Mode prepare
+
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -76,3 +86,42 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+
+      - name: Verify Windows installer signatures
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: ./.github/scripts/windows-code-signing.ps1 -Mode verify
+
+      - name: Remove Windows signing material
+        if: always() && matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: ./.github/scripts/windows-code-signing.ps1 -Mode cleanup
+
+  checksums:
+    name: Publish SHA-256 checksums
+    needs: publish
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Download release artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --dir artifacts
+
+      - name: Generate SHA256SUMS.txt
+        shell: pwsh
+        run: |
+          Get-ChildItem -LiteralPath artifacts -File |
+            Where-Object Name -ne "SHA256SUMS.txt" |
+            Sort-Object Name |
+            ForEach-Object {
+              $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+              "$hash  $($_.Name)"
+            } |
+            Set-Content -LiteralPath SHA256SUMS.txt -Encoding ascii
+
+      - name: Upload checksum file
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: gh release upload "$RELEASE_TAG" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber

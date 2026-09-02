@@ -6,6 +6,12 @@ All notable changes to Recast are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Add optional PFX-based Windows release signing with SignTool verification.
+- Publish a `SHA256SUMS.txt` integrity file with every GitHub Release.
+- Add Microsoft Store-compatible MSIX packaging with Microsoft's `winapp` CLI.
+
 ## [0.1.4] - 2026-09-01
 
 ### Added

@@ -1,10 +1,16 @@
 node_modules/
 dist/
 target/
+artifacts/
 .tauri/
 *.log
 *.tmp
 *.offconvert-temp
+*.pfx
+*.p12
+*.pvk
+*.key
+devcert.pfx
 .env
 .env.*
 !.env.example

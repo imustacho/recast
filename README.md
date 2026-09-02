@@ -78,6 +78,28 @@ Version tags such as `v0.1.0` build installers on all supported platforms and
 publish them to GitHub Releases. Maintainer instructions are in
 [docs/releasing.md](docs/releasing.md).
 
+Microsoft Store distribution uses a separate, unsigned MSIX package built with
+Microsoft's `winapp` CLI. It requires the exact application identity values
+reserved in Partner Center and does not replace the existing NSIS or WiX
+packages. Setup, local sideload testing, and CI instructions are in
+[docs/microsoft-store.md](docs/microsoft-store.md).
+
+### Windows code signing and SmartScreen
+
+Release builds can sign both the Windows NSIS `.exe` installer and WiX `.msi`
+package with a PFX code-signing certificate supplied through GitHub Secrets.
+The workflow uses SignTool with a SHA-256 file digest and an RFC 3161 timestamp,
+then verifies both signatures before completing the Windows build. No
+certificate or private key is stored in the repository. When signing secrets
+are absent, the workflow emits a warning and publishes unsigned installers.
+
+Code signing establishes publisher identity and helps reduce Microsoft Defender
+SmartScreen warnings, but a standard organization-validated code-signing
+certificate does not remove them immediately. SmartScreen reputation normally
+builds over time through consistently signed downloads; certificate type,
+download volume, and other Microsoft reputation signals can affect the result.
+Each release also includes `SHA256SUMS.txt` for artifact integrity checks.
+
 ## Contributing and security
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Report
