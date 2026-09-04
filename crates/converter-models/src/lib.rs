@@ -10,6 +10,7 @@ pub enum MediaCategory {
     Image,
     Video,
     Audio,
+    Document,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,6 +49,8 @@ pub struct ConversionCapabilities {
     pub formats: Vec<FormatDefinition>,
     pub codecs: Vec<CodecDefinition>,
     pub targets_by_source_category: BTreeMap<String, Vec<String>>,
+    #[serde(default)]
+    pub targets_by_source_format: BTreeMap<String, Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -181,6 +184,10 @@ pub struct ProgressEvent {
     pub message: Option<String>,
 }
 
+fn default_document_concurrency() -> usize {
+    2
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
@@ -192,6 +199,8 @@ pub struct AppSettings {
     pub image_concurrency: usize,
     pub audio_concurrency: usize,
     pub video_concurrency: usize,
+    #[serde(default = "default_document_concurrency")]
+    pub document_concurrency: usize,
     pub preserve_metadata: bool,
     pub notifications_enabled: bool,
     pub minimize_to_tray: bool,

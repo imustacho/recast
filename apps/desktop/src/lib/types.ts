@@ -1,4 +1,4 @@
-export type MediaCategory = "image" | "video" | "audio";
+export type MediaCategory = "image" | "video" | "audio" | "document";
 
 export interface FormatDefinition {
   id: string;
@@ -23,6 +23,7 @@ export interface ConversionCapabilities {
   formats: FormatDefinition[];
   codecs: CodecDefinition[];
   targetsBySourceCategory: Record<MediaCategory, string[]>;
+  targetsBySourceFormat?: Record<string, string[]>;
 }
 
 export interface ConversionJob {

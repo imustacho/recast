@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "presets": [
+    {
+      "id": "document-pdf",
+      "name": "Standard PDF",
+      "category": "document",
+      "targetFormat": "pdf",
+      "settings": {}
+    },
+    {
+      "id": "document-docx",
+      "name": "Word Document",
+      "category": "document",
+      "targetFormat": "docx",
+      "settings": {}
+    }
+  ]
+}

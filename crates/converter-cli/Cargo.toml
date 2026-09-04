@@ -12,3 +12,4 @@ recast-engines = { path = "../converter-engines" }
 recast-models = { path = "../converter-models" }
 serde_json.workspace = true
 shell-integration = { path = "../shell-integration" }
+tokio.workspace = true

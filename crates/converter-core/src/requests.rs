@@ -1,5 +1,5 @@
 use crate::errors::CoreError;
-use crate::formats::{detect_format, is_conversion_supported};
+use crate::formats::{detect_format, is_format_conversion_supported};
 use recast_models::ConversionRequest;
 
 pub fn validate_request(request: &ConversionRequest) -> Result<(), CoreError> {
@@ -19,7 +19,7 @@ pub fn validate_request(request: &ConversionRequest) -> Result<(), CoreError> {
             .to_ascii_lowercase();
 
         let source = detect_format(&extension).ok_or(CoreError::UnsupportedInput)?;
-        if !is_conversion_supported(&source.category, &request.target_format) {
+        if !is_format_conversion_supported(&source.id, &request.target_format) {
             return Err(CoreError::UnsupportedOutput);
         }
     }

@@ -6,8 +6,16 @@ All notable changes to Recast are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-04
+
 ### Added
 
+- Add first-class Document conversion support powered by LibreOffice 26.2+.
+- Support Text (ODT, DOCX, DOC, RTF, TXT, MD, HTML, EPUB), Spreadsheet (ODS, XLSX, XLS, CSV, TSV), and Presentation (ODP, PPTX, PPT) formats.
+- Add isolated user profile execution (`-env:UserInstallation=file:///...`) for concurrent, thread-safe document conversions.
+- Enforce family-isolated conversion capability graph and strict PDF output-only behavior.
+- Add Markdown version compatibility detection and gating (requiring LibreOffice 26.2+).
+- Add CLI `--execute` support for documents and `presets/document.json`.
 - Add optional PFX-based Windows release signing with SignTool verification.
 - Publish a `SHA256SUMS.txt` integrity file with every GitHub Release.
 - Add Microsoft Store-compatible MSIX packaging with Microsoft's `winapp` CLI.
@@ -59,7 +67,8 @@ All notable changes to Recast are documented here. The format follows
 - Desktop shell and reusable command-line interface.
 - Cross-platform CI and GitHub Release automation.
 
-[Unreleased]: https://github.com/imustacho/recast/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/imustacho/recast/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/imustacho/recast/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/imustacho/recast/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/imustacho/recast/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/imustacho/recast/compare/v0.1.1...v0.1.2

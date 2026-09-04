@@ -1,6 +1,4 @@
-use recast_core::formats::{
-    conversion_capabilities, ffmpeg_args_for, format_by_id, is_conversion_supported,
-};
+use recast_core::formats::{conversion_capabilities, ffmpeg_args_for, format_by_id};
 use recast_core::inspection::inspect_path;
 use recast_core::paths::resolve_output_collision;
 use recast_core::queue::QueueState;
@@ -80,16 +78,22 @@ fn queue_conversion(request: ConversionRequest) -> Result<Vec<ConversionJob>, St
 #[tauri::command]
 async fn convert_files(app: AppHandle, request: ConversionRequest) -> Vec<ConversionResult> {
     let ffmpeg = find_ffmpeg(&app);
+    let libreoffice = find_libreoffice(&app);
     let mut results = Vec::with_capacity(request.input_paths.len());
 
     for input in &request.input_paths {
-        results.push(convert_one(&ffmpeg, input, &request).await);
+        results.push(convert_one(&ffmpeg, libreoffice.as_deref(), input, &request).await);
     }
 
     results
 }
 
-async fn convert_one(ffmpeg: &Path, input: &Path, request: &ConversionRequest) -> ConversionResult {
+async fn convert_one(
+    ffmpeg: &Path,
+    libreoffice: Option<&Path>,
+    input: &Path,
+    request: &ConversionRequest,
+) -> ConversionResult {
     let failure = |message: String| ConversionResult {
         input_path: input.to_path_buf(),
         output_path: None,
@@ -102,10 +106,14 @@ async fn convert_one(ffmpeg: &Path, input: &Path, request: &ConversionRequest) -
         Err(error) => return failure(error.to_string()),
     };
 
-    if !is_conversion_supported(&media.category, &request.target_format) {
+    if !recast_core::formats::is_format_conversion_supported(
+        &media.detected_format,
+        &request.target_format,
+    ) {
         return failure(format!(
-            "{} files cannot be converted to {}",
-            category_name(&media.category),
+            "{} ({}) cannot be converted to {}",
+            input.display(),
+            media.detected_format,
             request.target_format
         ));
     }
@@ -131,39 +139,75 @@ async fn convert_one(ffmpeg: &Path, input: &Path, request: &ConversionRequest) -
         Err(error) => return failure(error.to_string()),
     };
 
-    let mut command = hidden_command(ffmpeg);
-    command.args(["-hide_banner", "-loglevel", "error"]);
-    if request.overwrite_policy == OverwritePolicy::Overwrite {
-        command.arg("-y");
-    } else {
-        command.arg("-n");
-    }
-    command.arg("-i").arg(input);
-    let Some(conversion_args) = ffmpeg_args_for(&media.category, &request.target_format) else {
-        return failure(format!("No FFmpeg mapping for {}", request.target_format));
-    };
-    command.args(conversion_args);
-    command.arg(&output_path);
+    if media.category == MediaCategory::Document {
+        let Some(lo_path) = libreoffice else {
+            return failure("LibreOffice document engine is unavailable. Please install LibreOffice or set the LIBREOFFICE_PATH environment variable.".into());
+        };
 
-    match command.output().await {
-        Ok(output) if output.status.success() => ConversionResult {
-            input_path: input.to_path_buf(),
-            output_path: Some(output_path),
-            success: true,
-            error: None,
-        },
-        Ok(output) => {
-            let details = String::from_utf8_lossy(&output.stderr).trim().to_string();
-            failure(if details.is_empty() {
-                format!("FFmpeg exited with status {}", output.status)
-            } else {
-                details
-            })
+        let is_markdown = media.detected_format == "md" || request.target_format == "md";
+        if is_markdown {
+            if let Some(version) = recast_engines::detect_libreoffice_version(lo_path) {
+                if !version.supports_markdown() {
+                    return failure(format!(
+                        "Markdown conversion requires LibreOffice 26.2 or newer (detected version: {}.{}.{})",
+                        version.major, version.minor, version.patch
+                    ));
+                }
+            }
         }
-        Err(error) => failure(format!(
-            "FFmpeg could not be started at '{}': {error}",
-            ffmpeg.display()
-        )),
+
+        match recast_core::execution::execute_document_conversion(
+            lo_path,
+            input,
+            &output_path,
+            &media.detected_format,
+            &request.target_format,
+        )
+        .await
+        {
+            Ok(final_path) => ConversionResult {
+                input_path: input.to_path_buf(),
+                output_path: Some(final_path),
+                success: true,
+                error: None,
+            },
+            Err(error) => failure(error.to_string()),
+        }
+    } else {
+        let mut command = hidden_command(ffmpeg);
+        command.args(["-hide_banner", "-loglevel", "error"]);
+        if request.overwrite_policy == OverwritePolicy::Overwrite {
+            command.arg("-y");
+        } else {
+            command.arg("-n");
+        }
+        command.arg("-i").arg(input);
+        let Some(conversion_args) = ffmpeg_args_for(&media.category, &request.target_format) else {
+            return failure(format!("No FFmpeg mapping for {}", request.target_format));
+        };
+        command.args(conversion_args);
+        command.arg(&output_path);
+
+        match command.output().await {
+            Ok(output) if output.status.success() => ConversionResult {
+                input_path: input.to_path_buf(),
+                output_path: Some(output_path),
+                success: true,
+                error: None,
+            },
+            Ok(output) => {
+                let details = String::from_utf8_lossy(&output.stderr).trim().to_string();
+                failure(if details.is_empty() {
+                    format!("FFmpeg exited with status {}", output.status)
+                } else {
+                    details
+                })
+            }
+            Err(error) => failure(format!(
+                "FFmpeg could not be started at '{}': {error}",
+                ffmpeg.display()
+            )),
+        }
     }
 }
 
@@ -192,6 +236,28 @@ fn find_ffmpeg(app: &AppHandle) -> PathBuf {
         .unwrap_or_else(|| PathBuf::from(executable))
 }
 
+fn find_libreoffice(app: &AppHandle) -> Option<PathBuf> {
+    let mut base_dirs = Vec::new();
+    if let Ok(resource_dir) = app.path().resource_dir() {
+        base_dirs.push(resource_dir.join("resources/engines"));
+        base_dirs.push(resource_dir.join("engines"));
+    }
+    if let Ok(current_exe) = std::env::current_exe() {
+        if let Some(directory) = current_exe.parent() {
+            base_dirs.push(directory.join("resources/engines"));
+            base_dirs.push(directory.join("engines"));
+        }
+    }
+
+    for base in base_dirs {
+        if let Some(path) = recast_engines::discover_libreoffice(Some(&base)) {
+            return Some(path);
+        }
+    }
+
+    recast_engines::discover_libreoffice(None)
+}
+
 fn hidden_command(program: &Path) -> Command {
     let mut command = Command::new(program);
     #[cfg(windows)]
@@ -203,11 +269,7 @@ fn hidden_command(program: &Path) -> Command {
 }
 
 fn category_name(category: &MediaCategory) -> &'static str {
-    match category {
-        MediaCategory::Image => "image",
-        MediaCategory::Video => "video",
-        MediaCategory::Audio => "audio",
-    }
+    recast_core::formats::category_name(category)
 }
 
 #[tauri::command]

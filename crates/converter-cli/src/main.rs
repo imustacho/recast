@@ -61,6 +61,8 @@ struct ConvertArgs {
     overwrite_policy: CliOverwritePolicy,
     #[arg(long)]
     json: bool,
+    #[arg(long)]
+    execute: bool,
 }
 
 #[derive(ValueEnum, Clone)]
@@ -82,7 +84,8 @@ impl From<CliOverwritePolicy> for OverwritePolicy {
     }
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
@@ -91,11 +94,18 @@ fn main() -> Result<()> {
             println!("{}", serde_json::to_string_pretty(&info)?);
         }
         Commands::Convert(args) => {
-            let engines = EngineSet::discover(Path::new("binaries/windows"))
-                .context("unable to discover conversion engines")?;
+            let engine_dir = if cfg!(windows) {
+                Path::new("binaries/windows")
+            } else if cfg!(target_os = "macos") {
+                Path::new("binaries/macos")
+            } else {
+                Path::new("binaries/linux")
+            };
+            let engines =
+                EngineSet::discover(engine_dir).context("unable to discover conversion engines")?;
             let request = ConversionRequest {
-                input_paths: args.inputs,
-                target_format: args.target_format,
+                input_paths: args.inputs.clone(),
+                target_format: args.target_format.clone(),
                 preset_id: args.preset,
                 output_directory: args.output,
                 overwrite_policy: args.overwrite_policy.into(),
@@ -104,6 +114,45 @@ fn main() -> Result<()> {
             let plan = build_plan(&request, &engines)?;
             if args.json {
                 println!("{}", serde_json::to_string_pretty(&plan)?);
+            } else if args.execute {
+                for item in &plan {
+                    println!(
+                        "Converting {} -> {} via {}",
+                        item.temp_output.display(),
+                        item.final_output.display(),
+                        item.executable.display()
+                    );
+                    if item.category == recast_models::MediaCategory::Document {
+                        let input = args
+                            .inputs
+                            .iter()
+                            .find(|p| {
+                                let stem = p.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+                                item.final_output.to_string_lossy().contains(stem)
+                            })
+                            .unwrap_or(&args.inputs[0]);
+                        let source_format =
+                            input.extension().and_then(|e| e.to_str()).unwrap_or("");
+                        recast_core::execution::execute_document_conversion(
+                            &item.executable,
+                            input,
+                            &item.final_output,
+                            source_format,
+                            &args.target_format,
+                        )
+                        .await?;
+                        println!("Completed: {}", item.final_output.display());
+                    } else {
+                        let mut cmd = std::process::Command::new(&item.executable);
+                        cmd.args(&item.args);
+                        let output = cmd.output()?;
+                        if !output.status.success() {
+                            let err = String::from_utf8_lossy(&output.stderr);
+                            anyhow::bail!("FFmpeg conversion failed: {err}");
+                        }
+                        println!("Completed: {}", item.final_output.display());
+                    }
+                }
             } else {
                 for item in plan {
                     println!(
@@ -142,8 +191,12 @@ fn main() -> Result<()> {
                 "presets/image.json",
                 "presets/video.json",
                 "presets/audio.json",
+                "presets/document.json",
             ] {
-                presets.extend(load_presets(Path::new(file))?);
+                let path = Path::new(file);
+                if path.exists() {
+                    presets.extend(load_presets(path)?);
+                }
             }
             if json {
                 println!("{}", serde_json::to_string_pretty(&presets)?);

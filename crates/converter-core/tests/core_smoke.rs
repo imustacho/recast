@@ -119,3 +119,229 @@ fn rename_policy_avoids_existing_file() {
     let _ = fs::remove_file(&file);
     let _ = fs::remove_dir(&root);
 }
+
+#[test]
+fn document_extensions_and_aliases_are_detected() {
+    let docx = detect_format("docx").expect("docx");
+    assert_eq!(docx.id, "docx");
+    assert_eq!(docx.category, MediaCategory::Document);
+
+    let md_alias = detect_format("markdown").expect("markdown alias");
+    assert_eq!(md_alias.id, "md");
+    assert_eq!(md_alias.category, MediaCategory::Document);
+
+    let htm_alias = detect_format("htm").expect("htm alias");
+    assert_eq!(htm_alias.id, "html");
+
+    let pdf = detect_format("pdf").expect("pdf");
+    assert_eq!(pdf.id, "pdf");
+    assert_eq!(pdf.category, MediaCategory::Document);
+
+    let odt = detect_format("odt").expect("odt");
+    assert_eq!(odt.id, "odt");
+
+    let xlsx = detect_format("xlsx").expect("xlsx");
+    assert_eq!(xlsx.id, "xlsx");
+
+    let pptx = detect_format("pptx").expect("pptx");
+    assert_eq!(pptx.id, "pptx");
+}
+
+#[test]
+fn pdf_is_strictly_output_only() {
+    let pdf_targets = target_formats_for("pdf");
+    assert!(
+        pdf_targets.is_empty(),
+        "PDF must not advertise any target formats"
+    );
+    assert!(!recast_core::formats::is_format_conversion_supported(
+        "pdf", "docx"
+    ));
+    assert!(!recast_core::formats::is_format_conversion_supported(
+        "pdf", "txt"
+    ));
+}
+
+#[test]
+fn document_capabilities_are_family_isolated() {
+    // Text documents
+    let docx_targets = target_formats_for("docx");
+    assert!(docx_targets.contains(&"pdf".into()));
+    assert!(docx_targets.contains(&"odt".into()));
+    assert!(docx_targets.contains(&"txt".into()));
+    assert!(docx_targets.contains(&"md".into()));
+    assert!(docx_targets.contains(&"html".into()));
+    // Cannot convert docx to spreadsheet or presentation
+    assert!(!docx_targets.contains(&"xlsx".into()));
+    assert!(!docx_targets.contains(&"pptx".into()));
+
+    // Spreadsheets
+    let xlsx_targets = target_formats_for("xlsx");
+    assert!(xlsx_targets.contains(&"pdf".into()));
+    assert!(xlsx_targets.contains(&"ods".into()));
+    assert!(xlsx_targets.contains(&"csv".into()));
+    assert!(!xlsx_targets.contains(&"docx".into()));
+    assert!(!xlsx_targets.contains(&"pptx".into()));
+
+    // Presentations
+    let pptx_targets = target_formats_for("pptx");
+    assert!(pptx_targets.contains(&"pdf".into()));
+    assert!(pptx_targets.contains(&"odp".into()));
+    assert!(pptx_targets.contains(&"ppt".into()));
+    assert!(!pptx_targets.contains(&"docx".into()));
+    assert!(!pptx_targets.contains(&"xlsx".into()));
+
+    // Cross-category is unsupported
+    assert!(!recast_core::formats::is_format_conversion_supported(
+        "docx", "mp4"
+    ));
+    assert!(!recast_core::formats::is_format_conversion_supported(
+        "mp4", "pdf"
+    ));
+}
+
+#[test]
+fn planning_selects_correct_engine_and_builds_args() {
+    use recast_core::execution::build_plan;
+    use recast_engines::{EngineBinary, EngineSet};
+    use recast_models::ConversionRequest;
+    use std::collections::BTreeMap;
+    use std::path::PathBuf;
+
+    let dummy_ffmpeg = EngineBinary {
+        name: "ffmpeg".into(),
+        path: PathBuf::from("fake/ffmpeg.exe"),
+        version_args: vec![],
+    };
+    let dummy_lo = EngineBinary {
+        name: "libreoffice".into(),
+        path: PathBuf::from("fake/soffice.exe"),
+        version_args: vec![],
+    };
+    let engines = EngineSet {
+        ffmpeg: dummy_ffmpeg,
+        libreoffice: Some(dummy_lo),
+    };
+
+    let root = std::env::temp_dir().join(format!("recast-plan-test-{}", std::process::id()));
+    let _ = fs::create_dir_all(&root);
+    let doc_file = root.join("test.docx");
+    let media_file = root.join("test.mp4");
+    fs::write(&doc_file, b"content").expect("doc fixture");
+    fs::write(&media_file, b"content").expect("media fixture");
+
+    let doc_request = ConversionRequest {
+        input_paths: vec![doc_file.clone()],
+        target_format: "pdf".into(),
+        preset_id: None,
+        output_directory: Some(root.clone()),
+        overwrite_policy: OverwritePolicy::Overwrite,
+        options: BTreeMap::new(),
+    };
+
+    let plans = build_plan(&doc_request, &engines).expect("document plan");
+    assert_eq!(plans.len(), 1);
+    assert_eq!(plans[0].category, MediaCategory::Document);
+    assert_eq!(plans[0].executable, PathBuf::from("fake/soffice.exe"));
+    assert!(plans[0].args.contains(&"--headless".into()));
+    assert!(plans[0].args.contains(&"--convert-to".into()));
+    assert!(plans[0].args.contains(&"pdf:writer_pdf_Export".into()));
+
+    let media_request = ConversionRequest {
+        input_paths: vec![media_file.clone()],
+        target_format: "mp3".into(),
+        preset_id: None,
+        output_directory: Some(root.clone()),
+        overwrite_policy: OverwritePolicy::Overwrite,
+        options: BTreeMap::new(),
+    };
+
+    let media_plans = build_plan(&media_request, &engines).expect("media plan");
+    assert_eq!(media_plans.len(), 1);
+    assert_eq!(media_plans[0].category, MediaCategory::Video);
+    assert_eq!(media_plans[0].executable, PathBuf::from("fake/ffmpeg.exe"));
+
+    let _ = fs::remove_file(&doc_file);
+    let _ = fs::remove_file(&media_file);
+    let _ = fs::remove_dir(&root);
+}
+
+#[test]
+fn planning_rejects_missing_libreoffice_engine() {
+    use recast_core::execution::build_plan;
+    use recast_engines::{EngineBinary, EngineSet};
+    use recast_models::ConversionRequest;
+    use std::collections::BTreeMap;
+    use std::path::PathBuf;
+
+    let root = std::env::temp_dir().join(format!("recast-plan-test2-{}", std::process::id()));
+    let _ = fs::create_dir_all(&root);
+    let doc_file = root.join("test.docx");
+    fs::write(&doc_file, b"content").expect("doc fixture");
+
+    let dummy_ffmpeg = EngineBinary {
+        name: "ffmpeg".into(),
+        path: PathBuf::from("fake/ffmpeg.exe"),
+        version_args: vec![],
+    };
+    let engines = EngineSet {
+        ffmpeg: dummy_ffmpeg,
+        libreoffice: None, // LibreOffice is missing!
+    };
+
+    let doc_request = ConversionRequest {
+        input_paths: vec![doc_file.clone()],
+        target_format: "pdf".into(),
+        preset_id: None,
+        output_directory: Some(root.clone()),
+        overwrite_policy: OverwritePolicy::Overwrite,
+        options: BTreeMap::new(),
+    };
+
+    let result = build_plan(&doc_request, &engines);
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(matches!(err, recast_core::CoreError::EngineNotFound(_)));
+
+    let _ = fs::remove_file(&doc_file);
+    let _ = fs::remove_dir(&root);
+}
+
+#[test]
+fn planning_rejects_unsupported_document_pair() {
+    use recast_core::execution::build_plan;
+    use recast_engines::{EngineBinary, EngineSet};
+    use recast_models::ConversionRequest;
+    use std::collections::BTreeMap;
+    use std::path::PathBuf;
+
+    let engines = EngineSet {
+        ffmpeg: EngineBinary {
+            name: "ffmpeg".into(),
+            path: PathBuf::from("fake/ffmpeg.exe"),
+            version_args: vec![],
+        },
+        libreoffice: Some(EngineBinary {
+            name: "libreoffice".into(),
+            path: PathBuf::from("fake/soffice.exe"),
+            version_args: vec![],
+        }),
+    };
+
+    // PDF -> DOCX is not allowed!
+    let invalid_request = ConversionRequest {
+        input_paths: vec![PathBuf::from("test.pdf")],
+        target_format: "docx".into(),
+        preset_id: None,
+        output_directory: Some(PathBuf::from("out")),
+        overwrite_policy: OverwritePolicy::Overwrite,
+        options: BTreeMap::new(),
+    };
+
+    let result = build_plan(&invalid_request, &engines);
+    assert!(result.is_err());
+    assert!(matches!(
+        result.unwrap_err(),
+        recast_core::CoreError::UnsupportedOutput
+    ));
+}

@@ -10,12 +10,13 @@ desktop application, CLI, and operating-system integrations.
 
 > [!IMPORTANT]
 > Recast is currently an early development release. Core image, video, and
-> audio conversions work through bundled FFmpeg, but advanced presets, history,
-> cancellation, and some platform integrations are still being implemented.
+> audio conversions work through bundled FFmpeg, and document conversions work
+> through headless LibreOffice. Advanced presets, history, cancellation, and some
+> platform integrations are still being implemented.
 
 ## Features
 
-- Offline image, video, and audio conversion architecture
+- Offline image, video, audio, and document conversion architecture
 - Native desktop shell with a multilingual React interface
 - Reusable Rust core and command-line interface
 - Preset-driven conversion plans and queue management
@@ -23,19 +24,32 @@ desktop application, CLI, and operating-system integrations.
 
 ## Supported formats
 
-All conversions use the bundled FFmpeg engine. Formats (file types and
-containers) are modeled separately from their default codecs, so codec choices
-can evolve without duplicating the format capability catalogue.
+Recast pairs media types with dedicated engines:
+- **Media (Image, Video, Audio)**: Processed via bundled/system FFmpeg.
+- **Documents**: Processed via headless LibreOffice (Writer, Calc, Impress).
 
-| Media | Accepted formats | Default output codecs |
+| Media | Accepted formats | Engine / Output details |
 | --- | --- | --- |
-| Image | JPG/JPEG, PNG, WebP, BMP, TIFF, GIF, AVIF | MJPEG, PNG, libwebp, BMP, TIFF, GIF, AV1 |
-| Audio | MP3, WAV, FLAC, AAC, M4A, OGG, Opus, AIFF, ALAC, AC3 | libmp3lame, PCM, FLAC, AAC, Vorbis, Opus, ALAC, AC3 |
-| Video | MP4, MKV, WebM, MOV, AVI, M4V, MPEG/MPG, OGV, TS/MTS/M2TS | H.264/AAC, VP9/Opus, MPEG-4, MPEG-2, Theora/Vorbis |
+| Image | JPG/JPEG, PNG, WebP, BMP, TIFF, GIF, AVIF | FFmpeg (MJPEG, PNG, libwebp, BMP, TIFF, GIF, AV1) |
+| Audio | MP3, WAV, FLAC, AAC, M4A, OGG, Opus, AIFF, ALAC, AC3 | FFmpeg (libmp3lame, PCM, FLAC, AAC, Vorbis, Opus, ALAC, AC3) |
+| Video | MP4, MKV, WebM, MOV, AVI, M4V, MPEG/MPG, OGV, TS/MTS/M2TS | FFmpeg (H.264/AAC, VP9/Opus, MPEG-4, MPEG-2, Theora/Vorbis) |
+| Document (Text) | ODT, DOCX, DOC, RTF, TXT, Markdown (MD), HTML, EPUB | LibreOffice (Writer filters; targets text formats & PDF) |
+| Document (Spreadsheet) | ODS, XLSX, XLS, CSV, TSV | LibreOffice (Calc filters; targets spreadsheet formats & PDF) |
+| Document (Presentation) | ODP, PPTX, PPT | LibreOffice (Impress filters; targets presentation formats & PDF) |
 
-Image inputs can target every image format, and audio inputs can target every
-audio format. Video inputs can target every video format and every audio format,
-which enables direct video-to-audio extraction.
+### Conversion Rules & Capabilities
+
+- **Image & Audio**: Inputs can target every format within their category.
+- **Video**: Can target every video format as well as every audio format (direct audio extraction).
+- **Documents**: Conversions are strictly **family-isolated** (Text documents cannot convert to Spreadsheets or Presentations, and vice versa).
+- **PDF Output-Only**: PDF is strictly an output/rendered destination. Recast does not convert PDF files back to editable document formats.
+- **Markdown Support**: Markdown (`.md`, `.markdown`) conversions require LibreOffice 26.2+. If an earlier version of LibreOffice is present, Markdown conversions fail gracefully with an actionable version error while other document formats continue to work.
+
+### Engine Discovery & Setup
+
+Recast discovers FFmpeg and LibreOffice automatically:
+- **FFmpeg**: Bundled binaries in `binaries/` or discovered on system `PATH`.
+- **LibreOffice**: Automatically detected in standard platform installation directories (Windows Program Files/LocalAppData, macOS `/Applications`, Linux `/usr/bin/soffice`), from system `PATH`, or via the `LIBREOFFICE_PATH` environment variable (e.g. `LIBREOFFICE_PATH="C:\Program Files\LibreOffice\program\soffice.exe"`). Each conversion job runs with an isolated temporary user profile to ensure thread safety during concurrent operations.
 
 ## Development
 

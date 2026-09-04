@@ -237,6 +237,104 @@ pub fn built_in_formats() -> Vec<FormatDefinition> {
             "mp2",
             Some("mpegts"),
         ),
+        // Document - Text formats
+        document_format("pdf", "PDF", &["pdf"], &["application/pdf"], "pdf"),
+        document_format(
+            "odt",
+            "ODT (OpenDocument Text)",
+            &["odt"],
+            &["application/vnd.oasis.opendocument.text"],
+            "odt",
+        ),
+        document_format(
+            "docx",
+            "DOCX (Word Document)",
+            &["docx"],
+            &["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+            "docx",
+        ),
+        document_format(
+            "doc",
+            "DOC (Word 97-2003)",
+            &["doc"],
+            &["application/msword"],
+            "doc",
+        ),
+        document_format(
+            "rtf",
+            "RTF (Rich Text)",
+            &["rtf"],
+            &["application/rtf", "text/rtf"],
+            "rtf",
+        ),
+        document_format("txt", "TXT (Plain Text)", &["txt"], &["text/plain"], "txt"),
+        document_format(
+            "md",
+            "Markdown",
+            &["md", "markdown"],
+            &["text/markdown", "text/x-markdown"],
+            "md",
+        ),
+        document_format(
+            "html",
+            "HTML",
+            &["html", "htm", "xhtml"],
+            &["text/html", "application/xhtml+xml"],
+            "html",
+        ),
+        document_format("epub", "EPUB", &["epub"], &["application/epub+zip"], "epub"),
+        // Document - Spreadsheet formats
+        document_format(
+            "ods",
+            "ODS (OpenDocument Sheet)",
+            &["ods"],
+            &["application/vnd.oasis.opendocument.spreadsheet"],
+            "ods",
+        ),
+        document_format(
+            "xlsx",
+            "XLSX (Excel Spreadsheet)",
+            &["xlsx"],
+            &["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+            "xlsx",
+        ),
+        document_format(
+            "xls",
+            "XLS (Excel 97-2003)",
+            &["xls"],
+            &["application/vnd.ms-excel"],
+            "xls",
+        ),
+        document_format("csv", "CSV", &["csv"], &["text/csv"], "csv"),
+        document_format(
+            "tsv",
+            "TSV",
+            &["tsv"],
+            &["text/tab-separated-values"],
+            "tsv",
+        ),
+        // Document - Presentation formats
+        document_format(
+            "odp",
+            "ODP (OpenDocument Presentation)",
+            &["odp"],
+            &["application/vnd.oasis.opendocument.presentation"],
+            "odp",
+        ),
+        document_format(
+            "pptx",
+            "PPTX (PowerPoint Presentation)",
+            &["pptx"],
+            &["application/vnd.openxmlformats-officedocument.presentationml.presentation"],
+            "pptx",
+        ),
+        document_format(
+            "ppt",
+            "PPT (PowerPoint 97-2003)",
+            &["ppt"],
+            &["application/vnd.ms-powerpoint"],
+            "ppt",
+        ),
     ]
 }
 
@@ -245,6 +343,7 @@ pub fn conversion_capabilities() -> ConversionCapabilities {
         MediaCategory::Image,
         MediaCategory::Audio,
         MediaCategory::Video,
+        MediaCategory::Document,
     ]
     .into_iter()
     .map(|category| {
@@ -254,10 +353,18 @@ pub fn conversion_capabilities() -> ConversionCapabilities {
         )
     })
     .collect::<BTreeMap<_, _>>();
+
+    let formats = built_in_formats();
+    let targets_by_source_format = formats
+        .iter()
+        .map(|format| (format.id.clone(), target_formats_for(&format.id)))
+        .collect::<BTreeMap<_, _>>();
+
     ConversionCapabilities {
-        formats: built_in_formats(),
+        formats,
         codecs: built_in_codecs(),
         targets_by_source_category,
+        targets_by_source_format,
     }
 }
 
@@ -281,10 +388,43 @@ pub fn target_formats_for(source_format: &str) -> Vec<String> {
     let Some(source) = detect_format(source_format).or_else(|| format_by_id(source_format)) else {
         return Vec::new();
     };
+
+    if source.category == MediaCategory::Document {
+        return target_formats_for_document(&source.id);
+    }
+
     target_formats_for_category(&source.category)
         .into_iter()
         .filter(|target| target != &source.id)
         .collect()
+}
+
+pub fn target_formats_for_document(source_id: &str) -> Vec<String> {
+    let clean = source_id.trim_start_matches('.').to_ascii_lowercase();
+    let targets: &[&str] = match clean.as_str() {
+        "pdf" => &[], // PDF is output-only
+        "docx" | "doc" | "odt" | "rtf" | "txt" | "md" | "markdown" | "html" | "htm" | "xhtml" => &[
+            "pdf", "odt", "docx", "doc", "rtf", "txt", "md", "html", "epub",
+        ],
+        "epub" => &["pdf", "odt", "docx", "doc", "rtf", "txt", "html"],
+        "xlsx" | "xls" | "ods" => &["pdf", "ods", "xlsx", "xls", "csv", "tsv", "html"],
+        "csv" | "tsv" => &["pdf", "ods", "xlsx", "xls", "csv", "tsv"],
+        "pptx" | "ppt" | "odp" => &["pdf", "odp", "pptx", "ppt"],
+        _ => &[],
+    };
+
+    targets
+        .iter()
+        .filter(|target| **target != clean)
+        .map(|target| (*target).to_string())
+        .collect()
+}
+
+pub fn is_format_conversion_supported(source_format: &str, target_format: &str) -> bool {
+    let clean_target = target_format.trim_start_matches('.').to_ascii_lowercase();
+    target_formats_for(source_format)
+        .iter()
+        .any(|target| target == &clean_target)
 }
 
 pub fn target_formats_for_category(category: &MediaCategory) -> Vec<String> {
@@ -296,6 +436,7 @@ pub fn target_formats_for_category(category: &MediaCategory) -> Vec<String> {
             MediaCategory::Video => {
                 format.category == MediaCategory::Video || format.category == MediaCategory::Audio
             }
+            MediaCategory::Document => format.category == MediaCategory::Document,
         })
         .map(|format| format.id)
         .collect()
@@ -308,6 +449,9 @@ pub fn is_conversion_supported(source: &MediaCategory, target_id: &str) -> bool 
 }
 
 pub fn ffmpeg_args_for(source: &MediaCategory, target_id: &str) -> Option<Vec<String>> {
+    if matches!(source, MediaCategory::Document) {
+        return None;
+    }
     if !is_conversion_supported(source, target_id) {
         return None;
     }
@@ -350,6 +494,7 @@ pub fn ffmpeg_args_for(source: &MediaCategory, target_id: &str) -> Option<Vec<St
                 args.extend(["-movflags".into(), "+faststart".into()]);
             }
         }
+        MediaCategory::Document => return None,
     }
     if let Some(container) = format.ffmpeg_format {
         args.extend(["-f".into(), container]);
@@ -369,11 +514,12 @@ fn append_codec(
     Some(())
 }
 
-fn category_name(category: &MediaCategory) -> &'static str {
+pub fn category_name(category: &MediaCategory) -> &'static str {
     match category {
         MediaCategory::Image => "image",
         MediaCategory::Video => "video",
         MediaCategory::Audio => "audio",
+        MediaCategory::Document => "document",
     }
 }
 
@@ -479,4 +625,24 @@ fn format(
         default_video_codec: default_video_codec.map(str::to_string),
         default_audio_codec: default_audio_codec.map(str::to_string),
     }
+}
+
+fn document_format(
+    id: &str,
+    display_name: &str,
+    extensions: &[&str],
+    mime_types: &[&str],
+    default_extension: &str,
+) -> FormatDefinition {
+    format(
+        id,
+        display_name,
+        MediaCategory::Document,
+        extensions,
+        mime_types,
+        default_extension,
+        None,
+        None,
+        None,
+    )
 }
