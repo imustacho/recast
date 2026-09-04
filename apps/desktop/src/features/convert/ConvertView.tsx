@@ -1,4 +1,4 @@
-import { invoke, isTauri } from "@tauri-apps/api/core";
+﻿import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
@@ -9,6 +9,7 @@ import type {
   ConversionJob,
   ConversionCapabilities,
   ConversionResult,
+  EngineStatus,
   LaunchRequest,
   MediaFile,
 } from "../../lib/types";
@@ -17,9 +18,11 @@ export function ConvertView() {
   const { t } = useTranslation();
   const launchHandled = useRef(false);
   const [isConverting, setIsConverting] = useState(false);
+  const [isInstallingLo, setIsInstallingLo] = useState(false);
   const [notice, setNotice] = useState<string>();
   const [error, setError] = useState<string>();
   const [capabilities, setCapabilities] = useState<ConversionCapabilities>();
+  const [engineStatus, setEngineStatus] = useState<EngineStatus>();
   const { files, targetFormat, addFiles, setTargetFormat, addJobs, updateJob } =
     useAppStore();
 
@@ -31,6 +34,25 @@ export function ConvertView() {
     () => new Map(capabilities?.formats.map((format) => [format.id, format.displayName]) ?? []),
     [capabilities],
   );
+
+  const hasDocumentFiles = useMemo(
+    () => files.some((file) => file.category === "document"),
+    [files],
+  );
+
+  const categoryNames = useMemo(() => {
+    const categories = Array.from(new Set(files.map((file) => file.category)));
+    return categories.map((cat) => t(cat, { defaultValue: cat })).join(", ");
+  }, [files, t]);
+
+  const incompatibilityNotice = useMemo(() => {
+    if (!files.length || availableFormats.length > 0) return null;
+    const categories = new Set(files.map((file) => file.category));
+    if (categories.size > 1) {
+      return t("incompatibleCategoriesNotice", { categories: categoryNames });
+    }
+    return t("noCompatibleFormatsNotice");
+  }, [files, availableFormats, categoryNames, t]);
 
   const handleDroppedPaths = useEffectEvent(async (paths: string[]) => {
     try {
@@ -54,6 +76,9 @@ export function ConvertView() {
     void invoke<ConversionCapabilities>("get_conversion_capabilities")
       .then(setCapabilities)
       .catch((reason: unknown) => setError(String(reason)));
+    void invoke<EngineStatus>("get_engine_status")
+      .then(setEngineStatus)
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -150,6 +175,24 @@ export function ConvertView() {
     }
   }
 
+  async function handleInstallLibreOffice() {
+    if (!isTauri() || isInstallingLo) return;
+    setIsInstallingLo(true);
+    setError(undefined);
+    setNotice(t("installing"));
+    try {
+      const msg = await invoke<string>("install_libreoffice");
+      const status = await invoke<EngineStatus>("get_engine_status");
+      setEngineStatus(status);
+      setNotice(msg || t("installedSuccessfully"));
+    } catch (reason) {
+      setError(String(reason));
+      setNotice(undefined);
+    } finally {
+      setIsInstallingLo(false);
+    }
+  }
+
   return (
     <section className="flex min-w-0 flex-1 flex-col gap-6" id="convert">
       <div className="rounded-3xl border-2 border-dashed border-slate-300 bg-white p-10 text-center">
@@ -171,8 +214,13 @@ export function ConvertView() {
             className="w-full rounded-xl border border-slate-200 px-3 py-2"
             disabled={!availableFormats.length || isConverting}
             onChange={(event) => setTargetFormat(event.target.value)}
-            value={availableFormats.includes(targetFormat) ? targetFormat : availableFormats[0]}
+            value={availableFormats.includes(targetFormat) ? targetFormat : (availableFormats[0] ?? "")}
           >
+            {!availableFormats.length && (
+              <option value="" disabled>
+                {t("noCompatibleFormats")}
+              </option>
+            )}
             {availableFormats.map((format) => (
               <option key={format} value={format}>
                 {formatNames.get(format) ?? format.toUpperCase()}
@@ -182,25 +230,53 @@ export function ConvertView() {
         </label>
 
         <div className="rounded-2xl bg-white p-4 shadow-sm">
-          <span className="mb-2 block text-sm text-slate-500">{t("files")}</span>
-          <p className="text-2xl font-semibold text-ink">{files.length}</p>
+          <span className="mb-2 block text-sm text-slate-500">{t("selectedFiles")}</span>
+          <div className="max-h-60 space-y-2 overflow-y-auto">
+            {files.map((file) => (
+              <div className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2" key={file.path}>
+                <span className="truncate text-sm text-slate-700">{file.path}</span>
+                <span className="rounded-full bg-accentSoft px-2 py-1 text-xs text-accent">{file.detectedFormat}</span>
+              </div>
+            ))}
+            {!files.length && <p className="text-sm text-slate-400">{t("noFiles")}</p>}
+          </div>
         </div>
       </div>
 
-      <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
-          {t("detectedFiles")}
-        </h2>
-        <div className="space-y-2">
-          {files.map((file) => (
-            <div className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2" key={file.path}>
-              <span className="truncate text-sm text-slate-700">{file.path}</span>
-              <span className="rounded-full bg-accentSoft px-2 py-1 text-xs text-accent">{file.detectedFormat}</span>
-            </div>
-          ))}
-          {!files.length && <p className="text-sm text-slate-400">{t("noFiles")}</p>}
+      {incompatibilityNotice && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          <p className="font-medium">⚠️ {incompatibilityNotice}</p>
         </div>
-      </div>
+      )}
+
+      {hasDocumentFiles && engineStatus && !engineStatus.libreoffice && (
+        <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="font-semibold">{t("libreOfficeRequiredTitle")}</p>
+              <p className="text-xs text-sky-700">{t("libreOfficeRequiredDesc")}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                className="rounded-xl bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-700 disabled:opacity-50"
+                disabled={isInstallingLo}
+                onClick={() => void handleInstallLibreOffice()}
+                type="button"
+              >
+                {isInstallingLo ? t("installing") : t("installLibreOffice")}
+              </button>
+              <a
+                className="rounded-xl border border-sky-300 bg-white px-3 py-1.5 text-xs font-medium text-sky-700 hover:bg-sky-100"
+                href="https://www.libreoffice.org/download/download-libreoffice/"
+                rel="noreferrer"
+                target="_blank"
+              >
+                {t("downloadFromWebsite")}
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       {notice && <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</p>}
       {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}

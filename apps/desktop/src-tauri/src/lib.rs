@@ -38,6 +38,61 @@ struct LaunchRequest {
     auto_start: bool,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct EngineStatus {
+    ffmpeg: bool,
+    libreoffice: bool,
+    libreoffice_version: Option<String>,
+}
+
+#[tauri::command]
+fn get_engine_status(app: AppHandle) -> EngineStatus {
+    let lo = find_libreoffice(&app);
+    let version = lo
+        .as_deref()
+        .and_then(recast_engines::detect_libreoffice_version)
+        .map(|v| format!("{}.{}.{}", v.major, v.minor, v.patch));
+    EngineStatus {
+        ffmpeg: true,
+        libreoffice: lo.is_some(),
+        libreoffice_version: version,
+    }
+}
+
+#[tauri::command]
+async fn install_libreoffice() -> Result<String, String> {
+    #[cfg(target_os = "windows")]
+    {
+        let mut cmd = Command::new("winget");
+        cmd.args([
+            "install",
+            "--id",
+            "TheDocumentFoundation.LibreOffice",
+            "-e",
+            "--accept-package-agreements",
+            "--accept-source-agreements",
+        ]);
+        #[cfg(windows)]
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        let output = cmd
+            .output()
+            .await
+            .map_err(|e| format!("Failed to run winget: {e}"))?;
+        if output.status.success() {
+            Ok("LibreOffice installed successfully!".into())
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            Err(format!("{stdout} {stderr}").trim().to_string())
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("Automatic installation is available on Windows via winget. On macOS/Linux, please install LibreOffice using your system package manager.".into())
+    }
+}
+
 #[tauri::command]
 fn get_conversion_capabilities() -> ConversionCapabilities {
     conversion_capabilities()
@@ -320,6 +375,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             get_conversion_capabilities,
+            get_engine_status,
+            install_libreoffice,
             inspect_files,
             queue_conversion,
             convert_files,

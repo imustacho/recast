@@ -133,6 +133,24 @@ fn command_args_generation_handles_spaces_and_special_paths() {
 }
 
 #[test]
+fn pdf_input_includes_writer_pdf_import_infilter() {
+    let input = Path::new("C:/Users/Test User/Belgelerim/belge.pdf");
+    let outdir = Path::new("C:/Users/Test User/Output");
+    let profile = Path::new("C:/Users/Test User/Temp/profile");
+
+    let args = build_libreoffice_args(input, outdir, "pdf", "docx", Some(profile));
+
+    assert_eq!(args[0], "--headless");
+    assert!(args[1].starts_with("-env:UserInstallation=file:///"));
+    assert_eq!(args[2], "--infilter=writer_pdf_import");
+    assert_eq!(args[3], "--convert-to");
+    assert_eq!(args[4], "docx:MS Word 2007 XML");
+    assert_eq!(args[5], "--outdir");
+    assert_eq!(args[6], outdir.display().to_string());
+    assert_eq!(args[7], input.display().to_string());
+}
+
+#[test]
 fn path_to_file_uri_produces_valid_schemes() {
     let win_path = Path::new(r"C:\Users\USER\Temp\profile");
     let win_uri = path_to_file_uri(win_path);

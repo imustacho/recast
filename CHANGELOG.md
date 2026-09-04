@@ -6,6 +6,15 @@ All notable changes to Recast are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-04
+
+### Added
+
+- Add PDF input support to convert PDF documents to editable formats (`docx`, `odt`, `doc`, `rtf`, `txt`, `md`, `html`, `epub`) using LibreOffice's `writer_pdf_import` filter.
+- Add user-friendly in-app warnings when files of incompatible categories or without a common target format are selected.
+- Add one-click LibreOffice installation via Windows Package Manager (`winget`) and official download link when document files are added without an available LibreOffice engine.
+- Add clear disabled placeholder state in the target format dropdown when no compatible format is available.
+
 ## [0.2.0] - 2026-09-04
 
 ### Added

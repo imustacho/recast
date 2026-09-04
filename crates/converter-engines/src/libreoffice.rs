@@ -127,6 +127,10 @@ pub fn build_libreoffice_args(
         let uri = path_to_file_uri(profile);
         args.push(format!("-env:UserInstallation={uri}"));
     }
+    let clean_source = source_format.trim_start_matches('.').to_ascii_lowercase();
+    if clean_source == "pdf" {
+        args.push("--infilter=writer_pdf_import".to_string());
+    }
     args.push("--convert-to".to_string());
     args.push(libreoffice_convert_arg(source_format, target_format));
     args.push("--outdir".to_string());

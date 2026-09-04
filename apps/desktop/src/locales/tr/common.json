@@ -21,5 +21,18 @@
   "conversionFailed": "Donusturme basarisiz",
   "showOutput": "Ciktiyi goster",
   "installContextMenu": "Sag tik menusunu kur",
-  "contextMenuInstalled": "Sag tik menusu kuruldu. Windows 11'de Daha fazla secenek goster altinda bulunur."
+  "contextMenuInstalled": "Sag tik menusu kuruldu. Windows 11'de Daha fazla secenek goster altinda bulunur.",
+  "noCompatibleFormats": "Uyumlu format yok",
+  "incompatibleCategoriesNotice": "Secilen dosyalar farkli dosya turlerine ait ({{categories}}) ve birlikte donusturulemez. Lutfen farkli dosya turlerini ayri ayri donusturun.",
+  "noCompatibleFormatsNotice": "Secilen dosyalar icin ortak bir hedef format bulunamadi.",
+  "libreOfficeRequiredTitle": "Belge donusturme icin LibreOffice gereklidir",
+  "libreOfficeRequiredDesc": "Belgeleri (PDF, DOCX, XLSX vb.) donusturebilmek icin bilgisayarinizda LibreOffice kurulu olmalidir.",
+  "installLibreOffice": "LibreOffice'i Otomatik Yukle (winget)",
+  "downloadFromWebsite": "Resmi Siteden Indir",
+  "installing": "Yukleniyor...",
+  "installedSuccessfully": "LibreOffice basariyla kuruldu!",
+  "image": "gorsel",
+  "video": "video",
+  "audio": "ses",
+  "document": "belge"
 }

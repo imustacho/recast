@@ -21,5 +21,18 @@
   "conversionFailed": "Conversion failed",
   "showOutput": "Show output",
   "installContextMenu": "Install right-click menu",
-  "contextMenuInstalled": "Right-click menu installed. On Windows 11, look under Show more options."
+  "contextMenuInstalled": "Right-click menu installed. On Windows 11, look under Show more options.",
+  "noCompatibleFormats": "No compatible format",
+  "incompatibleCategoriesNotice": "Selected files belong to different media types ({{categories}}) and cannot be converted together. Please convert different file types separately.",
+  "noCompatibleFormatsNotice": "No common target format found for the selected files.",
+  "libreOfficeRequiredTitle": "LibreOffice is required for document conversion",
+  "libreOfficeRequiredDesc": "To convert documents (PDF, DOCX, XLSX, etc.), LibreOffice must be installed on your computer.",
+  "installLibreOffice": "Install LibreOffice (winget)",
+  "downloadFromWebsite": "Download from website",
+  "installing": "Installing...",
+  "installedSuccessfully": "LibreOffice installed successfully!",
+  "image": "image",
+  "video": "video",
+  "audio": "audio",
+  "document": "document"
 }

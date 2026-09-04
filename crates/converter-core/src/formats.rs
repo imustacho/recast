@@ -402,7 +402,7 @@ pub fn target_formats_for(source_format: &str) -> Vec<String> {
 pub fn target_formats_for_document(source_id: &str) -> Vec<String> {
     let clean = source_id.trim_start_matches('.').to_ascii_lowercase();
     let targets: &[&str] = match clean.as_str() {
-        "pdf" => &[], // PDF is output-only
+        "pdf" => &["docx", "odt", "doc", "rtf", "txt", "md", "html", "epub"],
         "docx" | "doc" | "odt" | "rtf" | "txt" | "md" | "markdown" | "html" | "htm" | "xhtml" => &[
             "pdf", "odt", "docx", "doc", "rtf", "txt", "md", "html", "epub",
         ],

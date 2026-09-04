@@ -57,3 +57,9 @@ export interface MediaFile {
   detectedFormat: string;
   category: MediaCategory;
 }
+
+export interface EngineStatus {
+  ffmpeg: boolean;
+  libreoffice: boolean;
+  libreofficeVersion?: string;
+}

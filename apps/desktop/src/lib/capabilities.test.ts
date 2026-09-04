@@ -26,7 +26,7 @@ const capabilities = {
     document: ["pdf", "docx", "xlsx"],
   },
   targetsBySourceFormat: {
-    pdf: [],
+    pdf: ["docx", "odt", "txt"],
     docx: ["pdf", "odt", "txt"],
     xlsx: ["pdf", "ods", "csv"],
   },
@@ -58,8 +58,12 @@ describe("availableTargetFormats", () => {
     ]);
   });
 
-  it("enforces pdf as output-only with no target formats", () => {
-    expect(availableTargetFormats(capabilities, [file("document", "pdf")])).toEqual([]);
+  it("supports pdf source with text document target formats", () => {
+    expect(availableTargetFormats(capabilities, [file("document", "pdf")])).toEqual([
+      "docx",
+      "odt",
+      "txt",
+    ]);
   });
 
   it("intersects across document families leaving only common formats like pdf", () => {

@@ -148,17 +148,24 @@ fn document_extensions_and_aliases_are_detected() {
 }
 
 #[test]
-fn pdf_is_strictly_output_only() {
+fn pdf_supports_text_document_targets() {
     let pdf_targets = target_formats_for("pdf");
     assert!(
-        pdf_targets.is_empty(),
-        "PDF must not advertise any target formats"
+        !pdf_targets.is_empty(),
+        "PDF should advertise text document target formats"
     );
-    assert!(!recast_core::formats::is_format_conversion_supported(
+    assert!(pdf_targets.contains(&"docx".into()));
+    assert!(pdf_targets.contains(&"odt".into()));
+    assert!(pdf_targets.contains(&"txt".into()));
+    assert!(!pdf_targets.contains(&"xlsx".into()));
+    assert!(recast_core::formats::is_format_conversion_supported(
         "pdf", "docx"
     ));
-    assert!(!recast_core::formats::is_format_conversion_supported(
+    assert!(recast_core::formats::is_format_conversion_supported(
         "pdf", "txt"
+    ));
+    assert!(!recast_core::formats::is_format_conversion_supported(
+        "pdf", "xlsx"
     ));
 }
 
@@ -328,10 +335,10 @@ fn planning_rejects_unsupported_document_pair() {
         }),
     };
 
-    // PDF -> DOCX is not allowed!
+    // PDF -> XLSX is cross-family and not allowed!
     let invalid_request = ConversionRequest {
         input_paths: vec![PathBuf::from("test.pdf")],
-        target_format: "docx".into(),
+        target_format: "xlsx".into(),
         preset_id: None,
         output_directory: Some(PathBuf::from("out")),
         overwrite_policy: OverwritePolicy::Overwrite,
