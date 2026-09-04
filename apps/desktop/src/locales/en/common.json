@@ -5,6 +5,7 @@
   "presets": "Presets",
   "history": "History",
   "settings": "Settings",
+  "language": "Language",
   "dropFiles": "Drop image, video, audio, or document files here",
   "selectFiles": "Select files",
   "targetFormat": "Target format",

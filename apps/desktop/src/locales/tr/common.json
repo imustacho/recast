@@ -5,6 +5,7 @@
   "presets": "Hazir Ayarlar",
   "history": "Gecmis",
   "settings": "Ayarlar",
+  "language": "Dil",
   "dropFiles": "Gorsel, video, ses veya belge dosyalarini buraya birakin",
   "selectFiles": "Dosya sec",
   "targetFormat": "Hedef format",

@@ -38,6 +38,13 @@
     "windows": {
       "wix": {
         "language": "en-US"
+      },
+      "nsis": {
+        "languages": [
+          "Turkish",
+          "English"
+        ],
+        "displayLanguageSelector": true
       }
     }
   }
