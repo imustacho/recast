@@ -41,8 +41,8 @@
       },
       "nsis": {
         "languages": [
-          "Turkish",
-          "English"
+          "English",
+          "Turkish"
         ],
         "displayLanguageSelector": true
       }
