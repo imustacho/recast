@@ -34,5 +34,11 @@
   "image": "image",
   "video": "video",
   "audio": "audio",
-  "document": "document"
+  "document": "document",
+  "removeFile": "Remove file",
+  "clearAll": "Clear all",
+  "downloadingLibreOffice": "Downloading LibreOffice...",
+  "installingLibreOffice": "Installing LibreOffice...",
+  "showLogs": "Show logs",
+  "hideLogs": "Hide logs"
 }

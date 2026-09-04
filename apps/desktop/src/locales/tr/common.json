@@ -34,5 +34,11 @@
   "image": "gorsel",
   "video": "video",
   "audio": "ses",
-  "document": "belge"
+  "document": "belge",
+  "removeFile": "Dosyayi kaldir",
+  "clearAll": "Tumunu temizle",
+  "downloadingLibreOffice": "LibreOffice indiriliyor...",
+  "installingLibreOffice": "LibreOffice kuruluyor...",
+  "showLogs": "Gunlugu goster",
+  "hideLogs": "Gunlugu gizle"
 }

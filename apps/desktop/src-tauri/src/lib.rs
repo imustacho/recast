@@ -7,8 +7,10 @@ use recast_models::{
 };
 use serde::Serialize;
 use std::path::{Path, PathBuf};
+use std::process::Stdio;
 use std::sync::OnceLock;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
+use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 
 static QUEUE: OnceLock<QueueState> = OnceLock::new();
@@ -60,10 +62,48 @@ fn get_engine_status(app: AppHandle) -> EngineStatus {
     }
 }
 
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct InstallProgress {
+    line: String,
+    percentage: Option<u32>,
+    phase: String,
+}
+
 #[tauri::command]
-async fn install_libreoffice() -> Result<String, String> {
+fn open_external_url(_app: AppHandle, url: String) -> Result<(), String> {
+    tauri_plugin_opener::open_url(&url, None::<&str>).or_else(|_| {
+        #[cfg(windows)]
+        {
+            std::process::Command::new("cmd")
+                .args(["/c", "start", "", &url])
+                .spawn()
+                .map(|_| ())
+                .map_err(|e| e.to_string())
+        }
+        #[cfg(not(windows))]
+        {
+            Err("Failed to open external url".into())
+        }
+    })
+}
+
+#[tauri::command]
+async fn install_libreoffice(app: AppHandle) -> Result<String, String> {
     #[cfg(target_os = "windows")]
     {
+        if find_libreoffice(&app).is_some() {
+            let _ = app.emit(
+                "libreoffice-install-progress",
+                InstallProgress {
+                    line: "LibreOffice is already installed.".to_string(),
+                    percentage: Some(100),
+                    phase: "completed".to_string(),
+                },
+            );
+            return Ok("LibreOffice is already installed.".into());
+        }
+
         let mut cmd = Command::new("winget");
         cmd.args([
             "install",
@@ -72,24 +112,119 @@ async fn install_libreoffice() -> Result<String, String> {
             "-e",
             "--accept-package-agreements",
             "--accept-source-agreements",
+            "--disable-interactivity",
         ]);
         #[cfg(windows)]
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-        let output = cmd
-            .output()
+        cmd.stdout(Stdio::piped());
+        cmd.stderr(Stdio::piped());
+
+        let mut child = cmd
+            .spawn()
+            .map_err(|e| format!("Failed to start winget: {e}"))?;
+        let stdout = child.stdout.take().ok_or("Failed to capture stdout")?;
+        let stderr = child.stderr.take().ok_or("Failed to capture stderr")?;
+
+        let _ = app.emit(
+            "libreoffice-install-progress",
+            InstallProgress {
+                line: "Starting LibreOffice installation...".to_string(),
+                percentage: Some(0),
+                phase: "starting".to_string(),
+            },
+        );
+
+        let app_stdout = app.clone();
+        tokio::spawn(async move {
+            let mut lines = BufReader::new(stdout).lines();
+            while let Ok(Some(line)) = lines.next_line().await {
+                let trimmed = line.trim().to_string();
+                if trimmed.is_empty() {
+                    continue;
+                }
+
+                let mut phase = "downloading".to_string();
+                let mut percentage = None;
+
+                if let Some(pct_idx) = trimmed.find('%') {
+                    let start = trimmed[..pct_idx]
+                        .rfind(|c: char| !c.is_ascii_digit())
+                        .map(|i| i + 1)
+                        .unwrap_or(0);
+                    if let Ok(pct) = trimmed[start..pct_idx].trim().parse::<u32>() {
+                        percentage = Some(pct.min(100));
+                    }
+                }
+
+                let lower = trimmed.to_lowercase();
+                if lower.contains("install") || lower.contains("kurul") {
+                    phase = "installing".to_string();
+                } else if lower.contains("download") || lower.contains("indir") {
+                    phase = "downloading".to_string();
+                } else if lower.contains("found") || lower.contains("bulundu") {
+                    phase = "starting".to_string();
+                }
+
+                let _ = app_stdout.emit(
+                    "libreoffice-install-progress",
+                    InstallProgress {
+                        line: trimmed,
+                        percentage,
+                        phase,
+                    },
+                );
+            }
+        });
+
+        let app_stderr = app.clone();
+        tokio::spawn(async move {
+            let mut lines = BufReader::new(stderr).lines();
+            while let Ok(Some(line)) = lines.next_line().await {
+                let trimmed = line.trim().to_string();
+                if !trimmed.is_empty() {
+                    let _ = app_stderr.emit(
+                        "libreoffice-install-progress",
+                        InstallProgress {
+                            line: trimmed,
+                            percentage: None,
+                            phase: "downloading".to_string(),
+                        },
+                    );
+                }
+            }
+        });
+
+        let status = child
+            .wait()
             .await
-            .map_err(|e| format!("Failed to run winget: {e}"))?;
-        if output.status.success() {
+            .map_err(|e| format!("Process error: {e}"))?;
+
+        if status.success() || find_libreoffice(&app).is_some() {
+            let _ = app.emit(
+                "libreoffice-install-progress",
+                InstallProgress {
+                    line: "LibreOffice installed successfully!".to_string(),
+                    percentage: Some(100),
+                    phase: "completed".to_string(),
+                },
+            );
             Ok("LibreOffice installed successfully!".into())
         } else {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            Err(format!("{stdout} {stderr}").trim().to_string())
+            let code = status.code().unwrap_or(-1);
+            let _ = app.emit(
+                "libreoffice-install-progress",
+                InstallProgress {
+                    line: format!("Installation failed (exit code {code})"),
+                    percentage: None,
+                    phase: "failed".to_string(),
+                },
+            );
+            Err(format!("Winget failed with exit code {code}"))
         }
     }
     #[cfg(not(target_os = "windows"))]
     {
-        Err("Automatic installation is available on Windows via winget. On macOS/Linux, please install LibreOffice using your system package manager.".into())
+        Err("Automatic installation is available on Windows via winget.".into())
     }
 }
 
@@ -377,6 +512,7 @@ pub fn run() {
             get_conversion_capabilities,
             get_engine_status,
             install_libreoffice,
+            open_external_url,
             inspect_files,
             queue_conversion,
             convert_files,

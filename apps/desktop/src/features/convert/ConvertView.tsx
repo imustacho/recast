@@ -1,4 +1,5 @@
 ﻿import { invoke, isTauri } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
@@ -14,17 +15,34 @@ import type {
   MediaFile,
 } from "../../lib/types";
 
+interface InstallProgress {
+  line: string;
+  percentage?: number;
+  phase: string;
+}
+
 export function ConvertView() {
   const { t } = useTranslation();
   const launchHandled = useRef(false);
   const [isConverting, setIsConverting] = useState(false);
   const [isInstallingLo, setIsInstallingLo] = useState(false);
+  const [installProgress, setInstallProgress] = useState<InstallProgress>();
+  const [installLogs, setInstallLogs] = useState<string[]>([]);
+  const [showLogs, setShowLogs] = useState(false);
   const [notice, setNotice] = useState<string>();
   const [error, setError] = useState<string>();
   const [capabilities, setCapabilities] = useState<ConversionCapabilities>();
   const [engineStatus, setEngineStatus] = useState<EngineStatus>();
-  const { files, targetFormat, addFiles, setTargetFormat, addJobs, updateJob } =
-    useAppStore();
+  const {
+    files,
+    targetFormat,
+    addFiles,
+    removeFile,
+    clearFiles,
+    setTargetFormat,
+    addJobs,
+    updateJob,
+  } = useAppStore();
 
   const availableFormats = useMemo(
     () => availableTargetFormats(capabilities, files),
@@ -82,6 +100,20 @@ export function ConvertView() {
   }, []);
 
   useEffect(() => {
+    if (!isTauri()) return;
+    let unlisten: (() => void) | undefined;
+    void listen<InstallProgress>("libreoffice-install-progress", (event) => {
+      setInstallProgress(event.payload);
+      if (event.payload.line) {
+        setInstallLogs((prev) => [...prev.slice(-49), event.payload.line]);
+      }
+    }).then((stop) => {
+      unlisten = stop;
+    });
+    return () => unlisten?.();
+  }, []);
+
+  useEffect(() => {
     if (!availableFormats.includes(targetFormat)) {
       if (availableFormats[0]) setTargetFormat(availableFormats[0]);
     }
@@ -124,6 +156,19 @@ export function ConvertView() {
       await inspectAndAdd(Array.isArray(selected) ? selected : [selected]);
     } catch (reason) {
       setError(String(reason));
+    }
+  }
+
+  async function handleOpenWebsite() {
+    const url = "https://www.libreoffice.org/download/download-libreoffice/";
+    try {
+      if (isTauri()) {
+        await invoke("open_external_url", { url });
+      } else {
+        window.open(url, "_blank");
+      }
+    } catch {
+      window.open(url, "_blank");
     }
   }
 
@@ -180,6 +225,8 @@ export function ConvertView() {
     setIsInstallingLo(true);
     setError(undefined);
     setNotice(t("installing"));
+    setInstallLogs([]);
+    setInstallProgress(undefined);
     try {
       const msg = await invoke<string>("install_libreoffice");
       const status = await invoke<EngineStatus>("get_engine_status");
@@ -230,12 +277,45 @@ export function ConvertView() {
         </label>
 
         <div className="rounded-2xl bg-white p-4 shadow-sm">
-          <span className="mb-2 block text-sm text-slate-500">{t("selectedFiles")}</span>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm text-slate-500">
+              {t("selectedFiles")} ({files.length})
+            </span>
+            {files.length > 0 && (
+              <button
+                className="text-xs font-medium text-red-500 hover:text-red-700 transition"
+                disabled={isConverting}
+                onClick={clearFiles}
+                type="button"
+              >
+                {t("clearAll")}
+              </button>
+            )}
+          </div>
           <div className="max-h-60 space-y-2 overflow-y-auto">
             {files.map((file) => (
-              <div className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2" key={file.path}>
-                <span className="truncate text-sm text-slate-700">{file.path}</span>
-                <span className="rounded-full bg-accentSoft px-2 py-1 text-xs text-accent">{file.detectedFormat}</span>
+              <div
+                className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2"
+                key={file.path}
+              >
+                <span className="truncate text-sm text-slate-700" title={file.path}>
+                  {file.path}
+                </span>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="rounded-full bg-accentSoft px-2 py-1 text-xs text-accent">
+                    {file.detectedFormat}
+                  </span>
+                  <button
+                    aria-label={t("removeFile")}
+                    className="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200 hover:text-red-600 transition disabled:opacity-50"
+                    disabled={isConverting}
+                    onClick={() => removeFile(file.path)}
+                    title={t("removeFile")}
+                    type="button"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
             ))}
             {!files.length && <p className="text-sm text-slate-400">{t("noFiles")}</p>}
@@ -251,30 +331,86 @@ export function ConvertView() {
 
       {hasDocumentFiles && engineStatus && !engineStatus.libreoffice && (
         <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="font-semibold">{t("libreOfficeRequiredTitle")}</p>
-              <p className="text-xs text-sky-700">{t("libreOfficeRequiredDesc")}</p>
+          {!isInstallingLo ? (
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="font-semibold">{t("libreOfficeRequiredTitle")}</p>
+                <p className="text-xs text-sky-700">{t("libreOfficeRequiredDesc")}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  className="rounded-xl bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-700 disabled:opacity-50 transition"
+                  onClick={() => void handleInstallLibreOffice()}
+                  type="button"
+                >
+                  {t("installLibreOffice")}
+                </button>
+                <button
+                  className="rounded-xl border border-sky-300 bg-white px-3 py-1.5 text-xs font-medium text-sky-700 hover:bg-sky-100 transition"
+                  onClick={() => void handleOpenWebsite()}
+                  type="button"
+                >
+                  {t("downloadFromWebsite")}
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                className="rounded-xl bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-700 disabled:opacity-50"
-                disabled={isInstallingLo}
-                onClick={() => void handleInstallLibreOffice()}
-                type="button"
-              >
-                {isInstallingLo ? t("installing") : t("installLibreOffice")}
-              </button>
-              <a
-                className="rounded-xl border border-sky-300 bg-white px-3 py-1.5 text-xs font-medium text-sky-700 hover:bg-sky-100"
-                href="https://www.libreoffice.org/download/download-libreoffice/"
-                rel="noreferrer"
-                target="_blank"
-              >
-                {t("downloadFromWebsite")}
-              </a>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-sky-600 border-t-transparent" />
+                  <p className="font-semibold text-sky-900">
+                    {installProgress?.phase === "installing"
+                      ? t("installingLibreOffice")
+                      : t("downloadingLibreOffice")}
+                  </p>
+                </div>
+                {installProgress?.percentage !== undefined && (
+                  <span className="text-xs font-bold text-sky-700">
+                    %{installProgress.percentage}
+                  </span>
+                )}
+              </div>
+
+              <div className="h-2 w-full overflow-hidden rounded-full bg-sky-200">
+                {installProgress?.percentage !== undefined ? (
+                  <div
+                    className="h-full bg-sky-600 transition-all duration-300"
+                    style={{ width: `${installProgress.percentage}%` }}
+                  />
+                ) : (
+                  <div className="h-full w-2/3 animate-pulse rounded-full bg-sky-600" />
+                )}
+              </div>
+
+              {installProgress?.line && (
+                <p className="truncate rounded-lg border border-sky-200 bg-white/80 px-2.5 py-1.5 font-mono text-xs text-sky-800">
+                  &gt; {installProgress.line}
+                </p>
+              )}
+
+              {installLogs.length > 0 && (
+                <div>
+                  <button
+                    className="text-xs font-medium text-sky-700 hover:text-sky-900 underline"
+                    onClick={() => setShowLogs(!showLogs)}
+                    type="button"
+                  >
+                    {showLogs ? t("hideLogs") : t("showLogs")} ({installLogs.length})
+                  </button>
+                  {showLogs && (
+                    <div className="mt-2 max-h-36 overflow-y-auto rounded-lg bg-slate-900 p-2.5 font-mono text-[11px] leading-tight text-slate-200 space-y-1">
+                      {installLogs.map((log, index) => (
+                        <div key={index} className="truncate">
+                          {log}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
+          )}
         </div>
       )}
 
