@@ -6,6 +6,16 @@ All notable changes to Recast are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-09-04
+
+### Added
+
+- Add language selector dialog to Windows NSIS installer (`Turkish` and `English`).
+- Add settings menu dropdown with on-the-fly language switcher in the desktop header.
+- Add real-time download and installation progress bar, phase status, and terminal log drawer for LibreOffice.
+- Add per-file remove button and "Clear all" button to selected files list.
+- Fix external website redirection for "Download from website" button via default browser.
+
 ## [0.2.1] - 2026-09-04
 
 ### Added

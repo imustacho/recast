@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, Globe, Settings } from "lucide-react";
 import { QueueView } from "./features/queue/QueueView";
@@ -65,7 +65,7 @@ export function App() {
                   <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                     {t("settings")}
                   </span>
-                  <span className="text-[11px] font-mono text-slate-400">v0.2.1</span>
+                  <span className="text-[11px] font-mono text-slate-400">v0.2.2</span>
                 </div>
 
                 <div className="space-y-1">
