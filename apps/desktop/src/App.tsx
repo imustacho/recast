@@ -40,7 +40,7 @@ export function App() {
       <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-5 md:p-8">
         <header className="flex flex-wrap items-end justify-between gap-3 px-1">
           <div className="flex items-center gap-3">
-            <img src="/recast.png" alt="Recast logo" className="h-12 w-12 object-contain" />
+            <img src="./recast.png" alt="Recast logo" className="h-12 w-12 object-contain" />
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Offline-first</p>
               <h1 className="text-3xl font-semibold text-ink">Recast</h1>

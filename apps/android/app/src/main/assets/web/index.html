@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script>
+      (function() {
+        if (window.__TAURI_INTERNALS__) return;
+        window.__recast_callbacks = {};
+        window.__TAURI_INTERNALS__ = {
+            invoke: function(cmd, args, options) {
+                return new Promise(function(resolve, reject) {
+                    var callbackId = 'cb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    window.__recast_callbacks[callbackId] = { resolve: resolve, reject: reject };
+                    if (window.AndroidBridge && window.AndroidBridge.invoke) {
+                        window.AndroidBridge.invoke(cmd, JSON.stringify(args || {}), callbackId);
+                    } else {
+                        reject(new Error("AndroidBridge not available"));
+                    }
+                });
+            },
+            transformCallback: function(callback, once) {
+                var id = 'cb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                window.__recast_callbacks[id] = { resolve: callback, reject: function() {} };
+                return id;
+            },
+            unregisterCallback: function(id) {
+                delete window.__recast_callbacks[id];
+            },
+            callbacks: {},
+            metadata: {
+                currentWindow: { label: "main" }
+            },
+            convertFileSrc: function(filePath, protocol) {
+                return filePath;
+            }
+        };
+
+        window.__TAURI_EVENT_PLUGIN_INTERNALS__ = {
+            unregisterListener: function(event, eventId) {}
+        };
+      })();
+    </script>
+  
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Private, offline file conversion." />
+    <title>Recast</title>
+    <script type="module" crossorigin src="./assets/index-CaKXEau8.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-B8r1fTq-.css">
+  </head>
+  <body class="bg-slate-100">
+    <div id="root"></div>
+  </body>
+  </html>

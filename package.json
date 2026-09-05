@@ -16,7 +16,9 @@
     "tauri:dev": "npm --workspace @recast/desktop run tauri dev",
     "tauri:build": "npm --workspace @recast/desktop run tauri build",
     "pack:msix": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pack-msix.ps1",
-    "pack:msix:test": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pack-msix.ps1 -LocalTest"
+    "pack:msix:test": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pack-msix.ps1 -LocalTest",
+    "android:sync": "node scripts/sync-android.mjs",
+    "android:build": "npm run android:sync && powershell -NoProfile -Command \"Set-Location apps/android; .\\gradlew assembleDebug\""
   },
   "engines": {
     "node": ">=24"
