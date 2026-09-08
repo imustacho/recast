@@ -38,7 +38,7 @@ jobs:
           workspaces: . -> target
 
       - name: Setup winapp CLI
-        uses: microsoft/setup-WinAppCli@v0.1
+        uses: microsoft/setup-WinAppCli@v0.2
 
       - run: npm ci
 
