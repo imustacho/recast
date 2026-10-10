@@ -42,7 +42,12 @@
       "nsis": {
         "languages": [
           "English",
-          "Turkish"
+          "Turkish",
+          "German",
+          "Spanish",
+          "French",
+          "Italian",
+          "Russian"
         ],
         "displayLanguageSelector": true
       }

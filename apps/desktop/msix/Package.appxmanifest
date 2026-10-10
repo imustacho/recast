@@ -28,6 +28,11 @@
   <Resources>
     <Resource Language="en-US" />
     <Resource Language="tr-TR" />
+    <Resource Language="de-DE" />
+    <Resource Language="es-ES" />
+    <Resource Language="fr-FR" />
+    <Resource Language="it-IT" />
+    <Resource Language="ru-RU" />
   </Resources>
 
   <Applications>
