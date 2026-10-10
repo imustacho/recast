@@ -1,18 +1,36 @@
-﻿import { invoke, isTauri } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  AlertTriangle,
+  ChevronDown,
+  FileText,
+  FolderOpen,
+  RefreshCw,
+  UploadCloud,
+} from "lucide-react";
 import { availableTargetFormats } from "../../lib/capabilities";
+import { FALLBACK_CAPABILITIES, getFormatMeta } from "../../lib/formatMeta";
+import { getBasename } from "../../lib/formatUtils";
 import { useAppStore } from "../../lib/store";
+import { FormatIcon } from "../../components/FormatIcon";
+import { QuickFormatsBar } from "../../components/QuickFormatsBar";
+import { TargetFormatModal } from "../../components/TargetFormatModal";
+import { SelectFilesModal } from "../../components/SelectFilesModal";
+import { ConvertingScreen } from "../../components/ConvertingScreen";
+import { CompleteScreen } from "../../components/CompleteScreen";
 import type {
-  ConversionJob,
   ConversionCapabilities,
+  ConversionJob,
   ConversionResult,
   EngineStatus,
   LaunchRequest,
+  MediaCategory,
   MediaFile,
+  RecentConversionItem,
 } from "../../lib/types";
 
 interface InstallProgress {
@@ -24,33 +42,47 @@ interface InstallProgress {
 export function ConvertView() {
   const { t } = useTranslation();
   const launchHandled = useRef(false);
-  const [isConverting, setIsConverting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [isInstallingLo, setIsInstallingLo] = useState(false);
   const [installProgress, setInstallProgress] = useState<InstallProgress>();
   const [installLogs, setInstallLogs] = useState<string[]>([]);
   const [showLogs, setShowLogs] = useState(false);
   const [notice, setNotice] = useState<string>();
   const [error, setError] = useState<string>();
-  const [capabilities, setCapabilities] = useState<ConversionCapabilities>();
+  const [capabilities, setCapabilities] = useState<ConversionCapabilities>(FALLBACK_CAPABILITIES);
   const [engineStatus, setEngineStatus] = useState<EngineStatus>();
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+
+  // Modal visibility states
+  const [isFormatModalOpen, setIsFormatModalOpen] = useState(false);
+  const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
+
   const {
     files,
+    jobs,
     targetFormat,
+    conversionState,
+    overallProgress,
+    completedJobs,
+    settings,
     addFiles,
     removeFile,
     clearFiles,
     setTargetFormat,
     addJobs,
     updateJob,
+    addRecentFiles,
+    setConversionState,
+    setOverallProgress,
+    setCompletedJobs,
   } = useAppStore();
+
+  const isConverting = conversionState === "converting";
 
   const availableFormats = useMemo(
     () => availableTargetFormats(capabilities, files),
     [capabilities, files],
-  );
-  const formatNames = useMemo(
-    () => new Map(capabilities?.formats.map((format) => [format.id, format.displayName]) ?? []),
-    [capabilities],
   );
 
   const hasDocumentFiles = useMemo(
@@ -81,18 +113,26 @@ export function ConvertView() {
   });
 
   const handleLaunchRequest = useEffectEvent(async () => {
-    const launch = await invoke<LaunchRequest>("get_launch_request");
-    if (!launch.paths.length) return;
-    const inspected = await inspectAndAdd(launch.paths);
-    const format = launch.targetFormat ?? targetFormat;
-    if (launch.targetFormat) setTargetFormat(launch.targetFormat);
-    if (launch.autoStart) await runConversion(inspected, format);
+    try {
+      const launch = await invoke<LaunchRequest>("get_launch_request");
+      if (!launch.paths.length) return;
+      const inspected = await inspectAndAdd(launch.paths);
+      const format = launch.targetFormat ?? targetFormat;
+      if (launch.targetFormat) setTargetFormat(launch.targetFormat);
+      if (launch.autoStart) await runConversion(inspected, format);
+    } catch {
+      // Ignore launch request failure
+    }
   });
 
   useEffect(() => {
     if (!isTauri()) return;
     void invoke<ConversionCapabilities>("get_conversion_capabilities")
-      .then(setCapabilities)
+      .then((caps) => {
+        if (caps && caps.formats && caps.formats.length > 0) {
+          setCapabilities(caps);
+        }
+      })
       .catch((reason: unknown) => setError(String(reason)));
     void invoke<EngineStatus>("get_engine_status")
       .then(setEngineStatus)
@@ -114,7 +154,7 @@ export function ConvertView() {
   }, []);
 
   useEffect(() => {
-    if (!availableFormats.includes(targetFormat)) {
+    if (availableFormats.length > 0 && !availableFormats.includes(targetFormat)) {
       if (availableFormats[0]) setTargetFormat(availableFormats[0]);
     }
   }, [availableFormats, setTargetFormat, targetFormat]);
@@ -144,22 +184,69 @@ export function ConvertView() {
 
   async function inspectAndAdd(paths: string[]) {
     setError(undefined);
-    const inspected = await invoke<MediaFile[]>("inspect_files", { paths });
-    addFiles(inspected);
-    return inspected;
+    try {
+      if (isTauri()) {
+        const inspected = await invoke<MediaFile[]>("inspect_files", { paths });
+        addFiles(inspected);
+        return inspected;
+      }
+    } catch (err) {
+      setError(String(err));
+    }
+
+    // Fallback file inspection for browser / dev mode
+    const fallbackInspected: MediaFile[] = paths.map((path) => {
+      const ext = path.split(".").pop()?.toLowerCase() || "";
+      const meta = getFormatMeta(ext);
+      return {
+        path,
+        detectedFormat: ext || "txt",
+        category: meta.category,
+      };
+    });
+    addFiles(fallbackInspected);
+    return fallbackInspected;
   }
 
   async function handleSelectFiles() {
     try {
-      const selected = await open({ multiple: true });
-      if (!selected) return;
-      await inspectAndAdd(Array.isArray(selected) ? selected : [selected]);
-    } catch (reason) {
-      setError(String(reason));
+      if (isTauri()) {
+        const selected = await open({ multiple: true });
+        if (!selected) return;
+        await inspectAndAdd(Array.isArray(selected) ? selected : [selected]);
+        return;
+      }
+    } catch {
+      // Fallback to browser file input
+    }
+    fileInputRef.current?.click();
+  }
+
+  function handleFileInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const selectedFiles = event.target.files;
+    if (!selectedFiles || selectedFiles.length === 0) return;
+    const paths = Array.from(selectedFiles).map((f) => f.name);
+    void inspectAndAdd(paths);
+    event.target.value = "";
+  }
+
+  // HTML5 Drag and Drop handlers
+  function handleHtmlDrop(event: React.DragEvent) {
+    event.preventDefault();
+    setIsDraggingOver(false);
+    if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+      const droppedPaths = Array.from(event.dataTransfer.files).map(
+        (f) => (f as { path?: string }).path || f.name,
+      );
+      void inspectAndAdd(droppedPaths);
     }
   }
 
   async function handleOpenWebsite() {
+    if ("AndroidBridge" in window) {
+      setError(t("offlineOnly"));
+      return;
+    }
     const url = "https://www.libreoffice.org/download/download-libreoffice/";
     try {
       if (isTauri()) {
@@ -174,49 +261,117 @@ export function ConvertView() {
 
   async function runConversion(selectedFiles: MediaFile[], format: string) {
     if (!selectedFiles.length || isConverting) return;
-    setIsConverting(true);
+    setConversionState("converting");
+    setOverallProgress(15);
     setError(undefined);
     setNotice(t("conversionStarted"));
+    let newJobs: ConversionJob[] = [];
 
     try {
       const request = {
         inputPaths: selectedFiles.map((file) => file.path),
         targetFormat: format,
         presetId: null,
-        outputDirectory: null,
-        overwritePolicy: "rename",
+        outputDirectory: settings.outputFolder,
+        overwritePolicy: settings.overwriteExisting ? "overwrite" : "rename",
         options: {},
       };
-      const jobs = await invoke<ConversionJob[]>("queue_conversion", { request });
-      addJobs(jobs);
-      jobs.forEach((job) =>
-        updateJob({ ...job, status: "processing", progress: 20, currentStep: t("converting") }),
-      );
 
-      const results = await invoke<ConversionResult[]>("convert_files", { request });
-      results.forEach((result) => {
-        const job = jobs.find((candidate) => candidate.inputPath === result.inputPath);
-        if (!job) return;
-        updateJob({
-          ...job,
-          outputPath: result.outputPath,
-          status: result.success ? "completed" : "failed",
-          progress: result.success ? 100 : 0,
-          currentStep: result.success ? t("completed") : result.error,
+      if (isTauri()) {
+        newJobs = await invoke<ConversionJob[]>("queue_conversion", { request });
+        addJobs(newJobs);
+        newJobs.forEach((job) =>
+          updateJob({ ...job, status: "processing", progress: 30, currentStep: t("converting") }),
+        );
+
+        setOverallProgress(50);
+        const results = await invoke<ConversionResult[]>("convert_files", { request });
+        setOverallProgress(90);
+
+        const updatedJobsList: ConversionJob[] = [];
+        const recentItems: RecentConversionItem[] = [];
+
+        results.forEach((result) => {
+          const job = newJobs.find((candidate) => candidate.inputPath === result.inputPath);
+          if (!job) return;
+          const updated: ConversionJob = {
+            ...job,
+            outputPath: result.outputPath,
+            status: result.success ? "completed" : "failed",
+            progress: result.success ? 100 : 0,
+            currentStep: result.success ? t("completed") : result.error,
+          };
+          updateJob(updated);
+          updatedJobsList.push(updated);
+
+          if (result.success) {
+            const fileObj = selectedFiles.find((f) => f.path === result.inputPath);
+            recentItems.push({
+              id: job.id,
+              name: getBasename(result.inputPath),
+              inputPath: result.inputPath,
+              outputPath: result.outputPath,
+              targetFormat: format,
+              category: fileObj?.category || "document",
+              timestamp: Date.now(),
+              success: true,
+            });
+          }
         });
-      });
 
-      const succeeded = results.filter((result) => result.success).length;
-      const failed = results.length - succeeded;
-      setNotice(t("conversionSummary", { succeeded, failed }));
-      if (failed) {
-        setError(results.find((result) => !result.success)?.error ?? t("conversionFailed"));
+        if (recentItems.length > 0) {
+          addRecentFiles(recentItems);
+        }
+
+        const succeeded = results.filter((result) => result.success).length;
+        const failed = results.length - succeeded;
+        setNotice(t("conversionSummary", { succeeded, failed }));
+        if (failed) {
+          setError(results.find((result) => !result.success)?.error ?? t("conversionFailed"));
+        }
+
+        setOverallProgress(100);
+        setCompletedJobs(updatedJobsList);
+        setConversionState("complete");
+      } else {
+        // Mock simulated conversion for browser testing/development
+        await new Promise((r) => setTimeout(r, 600));
+        setOverallProgress(65);
+        await new Promise((r) => setTimeout(r, 600));
+        setOverallProgress(100);
+        const mockCompleted: ConversionJob[] = selectedFiles.map((file, idx) => ({
+          id: `job-${Date.now()}-${idx}`,
+          inputPath: file.path,
+          outputPath: `${file.path}.${format}`,
+          sourceFormat: file.detectedFormat,
+          targetFormat: format,
+          status: "completed",
+          progress: 100,
+          currentStep: t("completed"),
+          createdAt: new Date().toISOString(),
+        }));
+        setCompletedJobs(mockCompleted);
+        addRecentFiles(
+          mockCompleted.map((j) => ({
+            id: j.id,
+            name: getBasename(j.inputPath),
+            inputPath: j.inputPath,
+            outputPath: j.outputPath,
+            targetFormat: format,
+            category: "document",
+            timestamp: Date.now(),
+            success: true,
+          })),
+        );
+        setConversionState("complete");
       }
     } catch (reason) {
+      newJobs.forEach((job) =>
+        updateJob({ ...job, status: "failed", progress: 0, currentStep: String(reason) }),
+      );
       setError(String(reason));
       setNotice(undefined);
-    } finally {
-      setIsConverting(false);
+      setConversionState("idle");
     }
   }
 
@@ -240,115 +395,226 @@ export function ConvertView() {
     }
   }
 
+  function handleConvertMore() {
+    clearFiles();
+    setConversionState("idle");
+    setOverallProgress(0);
+    setNotice(undefined);
+    setError(undefined);
+  }
+
+  // Active Target Format metadata
+  const targetMeta = getFormatMeta(targetFormat);
+
+  // If in converting state, show the Mobile/Desktop Converting Screen!
+  if (conversionState === "converting") {
+    return (
+      <ConvertingScreen
+        files={files}
+        jobs={jobs}
+        targetFormat={targetFormat}
+        overallProgress={overallProgress}
+        onCancel={() => setConversionState("idle")}
+      />
+    );
+  }
+
+  // If in conversion complete state, show Celebration Complete Screen!
+  if (conversionState === "complete") {
+    return (
+      <CompleteScreen
+        completedJobs={completedJobs}
+        targetFormat={targetFormat}
+        onConvertMore={handleConvertMore}
+      />
+    );
+  }
+
   return (
     <section className="flex min-w-0 flex-1 flex-col gap-6" id="convert">
-      <div className="rounded-3xl border-2 border-dashed border-slate-300 bg-white p-10 text-center">
-        <p className="text-lg font-medium text-ink">{t("dropFiles")}</p>
-        <button
-          className="mt-4 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-          disabled={isConverting}
-          onClick={() => void handleSelectFiles()}
-          type="button"
-        >
-          {t("selectFiles")}
-        </button>
+      {/* Hidden file input for fallback */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={handleFileInputChange}
+      />
+
+      {/* Welcome Heading (Desktop View) */}
+      <div className="hidden lg:block space-y-1">
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">{t("welcomeBack")}</h2>
+        <p className="text-sm text-slate-400">{t("welcomeSubtitle")}</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className="rounded-2xl bg-white p-4 shadow-sm">
-          <span className="mb-2 block text-sm text-slate-500">{t("targetFormat")}</span>
-          <select
-            className="w-full rounded-xl border border-slate-200 px-3 py-2"
-            disabled={!availableFormats.length || isConverting}
-            onChange={(event) => setTargetFormat(event.target.value)}
-            value={availableFormats.includes(targetFormat) ? targetFormat : (availableFormats[0] ?? "")}
-          >
-            {!availableFormats.length && (
-              <option value="" disabled>
-                {t("noCompatibleFormats")}
-              </option>
-            )}
-            {availableFormats.map((format) => (
-              <option key={format} value={format}>
-                {formatNames.get(format) ?? format.toUpperCase()}
-              </option>
-            ))}
-          </select>
-        </label>
+      {/* Large Drop Zone Card */}
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDraggingOver(true);
+        }}
+        onDragLeave={() => setIsDraggingOver(false)}
+        onDrop={handleHtmlDrop}
+        className={`relative flex min-h-[220px] sm:min-h-[260px] flex-col items-center justify-center rounded-3xl border-2 border-dashed p-6 sm:p-10 text-center transition ${
+          isDraggingOver
+            ? "border-emerald-500 bg-emerald-50/50 scale-[1.005]"
+            : "border-slate-200 bg-white hover:border-slate-300"
+        }`}
+      >
+        <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl text-slate-700">
+          <UploadCloud className="h-12 w-12 stroke-[1.6]" />
+        </div>
 
-        <div className="rounded-2xl bg-white p-4 shadow-sm">
+        <p className="text-base sm:text-lg font-bold text-slate-900">{t("dropFilesHere")}</p>
+        <p className="mt-0.5 text-xs text-slate-400">{t("orClickToSelect")}</p>
+
+        <button
+          type="button"
+          disabled={isConverting}
+          onClick={() => void handleSelectFiles()}
+          className="mt-4 flex items-center gap-2 rounded-full bg-emerald-700 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-emerald-700/20 hover:bg-emerald-800 transition active:scale-95 disabled:opacity-50"
+        >
+          <FolderOpen className="h-4 w-4" />
+          <span>{t("selectFiles")}</span>
+        </button>
+
+        <p className="mt-4 text-[11px] text-slate-400">{t("mediaTypesHint")}</p>
+      </div>
+
+      {/* Target Format and Selected Files Cards Row */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Target Format Card */}
+        <div className="rounded-3xl border border-slate-100 bg-white p-4 sm:p-5 shadow-sm transition">
+          <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
+            {t("targetFormat")}
+          </span>
+
+          <button
+            type="button"
+            disabled={isConverting}
+            onClick={() => setIsFormatModalOpen(true)}
+            className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/60 p-3 hover:border-slate-300 hover:bg-slate-100/60 transition disabled:opacity-50"
+          >
+            <div className="flex items-center gap-3">
+              <FormatIcon format={targetFormat} category={targetMeta.category} size="md" />
+              <div className="text-left">
+                <span className="text-sm font-bold text-slate-800">{targetMeta.displayName}</span>
+                <span className="block text-[11px] text-slate-400">{targetMeta.subtitle}</span>
+              </div>
+            </div>
+
+            <ChevronDown className="h-4 w-4 text-slate-400" />
+          </button>
+        </div>
+
+        {/* Selected Files Card */}
+        <div className="rounded-3xl border border-slate-100 bg-white p-4 sm:p-5 shadow-sm transition">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-slate-500">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
               {t("selectedFiles")} ({files.length})
             </span>
             {files.length > 0 && (
               <button
-                className="text-xs font-medium text-red-500 hover:text-red-700 transition"
+                type="button"
                 disabled={isConverting}
                 onClick={clearFiles}
-                type="button"
+                className="text-xs font-semibold text-red-500 hover:text-red-700 transition"
               >
                 {t("clearAll")}
               </button>
             )}
           </div>
-          <div className="max-h-60 space-y-2 overflow-y-auto">
-            {files.map((file) => (
-              <div
-                className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2"
-                key={file.path}
-              >
-                <span className="truncate text-sm text-slate-700" title={file.path}>
-                  {file.path}
+
+          {files.length === 0 ? (
+            <div
+              onClick={() => void handleSelectFiles()}
+              className="flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-3 text-slate-400 hover:border-slate-300 hover:bg-slate-100/60 transition"
+            >
+              <FileText className="h-5 w-5 text-slate-400" />
+              <span className="text-xs">{t("noFiles")}</span>
+            </div>
+          ) : (
+            <div
+              onClick={() => setIsFilesModalOpen(true)}
+              className="flex cursor-pointer items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/60 p-3 hover:border-slate-300 hover:bg-slate-100/60 transition"
+            >
+              <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                <FormatIcon
+                  format={files[0].detectedFormat}
+                  category={files[0].category as MediaCategory}
+                  size="sm"
+                />
+                <span className="truncate text-xs font-semibold text-slate-800" title={files[0].path}>
+                  {getBasename(files[0].path)}
                 </span>
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className="rounded-full bg-accentSoft px-2 py-1 text-xs text-accent">
-                    {file.detectedFormat}
+                {files.length > 1 && (
+                  <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                    +{files.length - 1}
                   </span>
-                  <button
-                    aria-label={t("removeFile")}
-                    className="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200 hover:text-red-600 transition disabled:opacity-50"
-                    disabled={isConverting}
-                    onClick={() => removeFile(file.path)}
-                    title={t("removeFile")}
-                    type="button"
-                  >
-                    ✕
-                  </button>
-                </div>
+                )}
               </div>
-            ))}
-            {!files.length && <p className="text-sm text-slate-400">{t("noFiles")}</p>}
-          </div>
+
+              <span className="text-xs font-medium text-emerald-700 hover:underline">
+                {t("files")} &gt;
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Convert Now Action Button */}
+      <div>
+        <button
+          type="button"
+          disabled={!files.length || isConverting || !availableFormats.length}
+          onClick={() => void runConversion(files, targetFormat)}
+          className={`flex w-full items-center justify-center gap-2 rounded-full py-4 text-sm font-bold shadow-md transition active:scale-[0.99] disabled:cursor-not-allowed ${
+            !files.length || isConverting || !availableFormats.length
+              ? "bg-slate-200 text-slate-400 shadow-none"
+              : "bg-slate-900 text-white hover:bg-slate-800 shadow-slate-900/20"
+          }`}
+        >
+          <RefreshCw className={`h-4 w-4 ${isConverting ? "animate-spin" : ""}`} />
+          <span>{isConverting ? t("converting") : t("convertNow")}</span>
+        </button>
+      </div>
+
+      {/* Quick Formats Bar (matches Desktop Mockup bottom area) */}
+      <QuickFormatsBar
+        currentTarget={targetFormat}
+        onSelectFormat={(fmt) => setTargetFormat(fmt)}
+        disabled={isConverting}
+      />
+
+      {/* Incompatibility / Notices */}
       {incompatibilityNotice && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          <p className="font-medium">⚠️ {incompatibilityNotice}</p>
+        <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+          <p className="font-medium leading-relaxed">{incompatibilityNotice}</p>
         </div>
       )}
 
+      {/* LibreOffice Engine Helper (Desktop Windows) */}
       {hasDocumentFiles && engineStatus && !engineStatus.libreoffice && (
-        <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+        <div className="rounded-3xl border border-sky-200 bg-sky-50/70 p-5 text-sm text-sky-950">
           {!isInstallingLo ? (
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="font-semibold">{t("libreOfficeRequiredTitle")}</p>
-                <p className="text-xs text-sky-700">{t("libreOfficeRequiredDesc")}</p>
+                <p className="font-bold">{t("libreOfficeRequiredTitle")}</p>
+                <p className="mt-0.5 text-xs text-sky-800">{t("libreOfficeRequiredDesc")}</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
-                  className="rounded-xl bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-700 disabled:opacity-50 transition"
-                  onClick={() => void handleInstallLibreOffice()}
                   type="button"
+                  onClick={() => void handleInstallLibreOffice()}
+                  className="rounded-full bg-sky-600 px-4 py-2 text-xs font-bold text-white hover:bg-sky-700 transition"
                 >
                   {t("installLibreOffice")}
                 </button>
                 <button
-                  className="rounded-xl border border-sky-300 bg-white px-3 py-1.5 text-xs font-medium text-sky-700 hover:bg-sky-100 transition"
-                  onClick={() => void handleOpenWebsite()}
                   type="button"
+                  onClick={() => void handleOpenWebsite()}
+                  className="rounded-full border border-sky-300 bg-white px-4 py-2 text-xs font-bold text-sky-800 hover:bg-sky-100 transition"
                 >
                   {t("downloadFromWebsite")}
                 </button>
@@ -359,32 +625,28 @@ export function ConvertView() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="h-3 w-3 animate-spin rounded-full border-2 border-sky-600 border-t-transparent" />
-                  <p className="font-semibold text-sky-900">
+                  <p className="font-bold text-sky-950">
                     {installProgress?.phase === "installing"
                       ? t("installingLibreOffice")
                       : t("downloadingLibreOffice")}
                   </p>
                 </div>
                 {installProgress?.percentage !== undefined && (
-                  <span className="text-xs font-bold text-sky-700">
+                  <span className="text-xs font-bold text-sky-800">
                     %{installProgress.percentage}
                   </span>
                 )}
               </div>
 
               <div className="h-2 w-full overflow-hidden rounded-full bg-sky-200">
-                {installProgress?.percentage !== undefined ? (
-                  <div
-                    className="h-full bg-sky-600 transition-all duration-300"
-                    style={{ width: `${installProgress.percentage}%` }}
-                  />
-                ) : (
-                  <div className="h-full w-2/3 animate-pulse rounded-full bg-sky-600" />
-                )}
+                <div
+                  className="h-full bg-sky-600 transition-all duration-300"
+                  style={{ width: `${installProgress?.percentage || 30}%` }}
+                />
               </div>
 
               {installProgress?.line && (
-                <p className="truncate rounded-lg border border-sky-200 bg-white/80 px-2.5 py-1.5 font-mono text-xs text-sky-800">
+                <p className="truncate rounded-xl border border-sky-200 bg-white/80 px-3 py-1.5 font-mono text-xs text-sky-900">
                   &gt; {installProgress.line}
                 </p>
               )}
@@ -392,14 +654,14 @@ export function ConvertView() {
               {installLogs.length > 0 && (
                 <div>
                   <button
-                    className="text-xs font-medium text-sky-700 hover:text-sky-900 underline"
+                    className="text-xs font-semibold text-sky-700 hover:text-sky-900 underline"
                     onClick={() => setShowLogs(!showLogs)}
                     type="button"
                   >
                     {showLogs ? t("hideLogs") : t("showLogs")} ({installLogs.length})
                   </button>
                   {showLogs && (
-                    <div className="mt-2 max-h-36 overflow-y-auto rounded-lg bg-slate-900 p-2.5 font-mono text-[11px] leading-tight text-slate-200 space-y-1">
+                    <div className="mt-2 max-h-36 overflow-y-auto rounded-xl bg-slate-900 p-2.5 font-mono text-[11px] leading-tight text-slate-200 space-y-1">
                       {installLogs.map((log, index) => (
                         <div key={index} className="truncate">
                           {log}
@@ -414,17 +676,32 @@ export function ConvertView() {
         </div>
       )}
 
-      {notice && <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</p>}
-      {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+      {notice && (
+        <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-xs font-medium text-emerald-800">
+          {notice}
+        </p>
+      )}
+      {error && (
+        <p className="rounded-2xl bg-red-50 px-4 py-3 text-xs font-medium text-red-700">{error}</p>
+      )}
 
-      <button
-        className="w-fit rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
-        disabled={!files.length || isConverting || !availableFormats.length}
-        onClick={() => void runConversion(files, targetFormat)}
-        type="button"
-      >
-        {isConverting ? t("converting") : t("convertNow")}
-      </button>
+      {/* Modals */}
+      <TargetFormatModal
+        isOpen={isFormatModalOpen}
+        onClose={() => setIsFormatModalOpen(false)}
+        selectedFormat={targetFormat}
+        onSelectFormat={(fmt) => setTargetFormat(fmt)}
+        allowedFormats={availableFormats}
+      />
+
+      <SelectFilesModal
+        isOpen={isFilesModalOpen}
+        onClose={() => setIsFilesModalOpen(false)}
+        files={files}
+        onRemoveFile={removeFile}
+        onAddMoreFiles={() => void handleSelectFiles()}
+        disabled={isConverting}
+      />
     </section>
   );
 }

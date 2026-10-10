@@ -1,0 +1,88 @@
+import { useTranslation } from "react-i18next";
+import { Clock, ChevronRight } from "lucide-react";
+import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { useState } from "react";
+import { FormatIcon } from "./FormatIcon";
+import { formatTimeAgo, getBasename } from "../lib/formatUtils";
+import { useAppStore } from "../lib/store";
+
+export function DesktopRecentPanel() {
+  const { t, i18n } = useTranslation();
+  const { recentFiles, clearRecentFiles } = useAppStore();
+  const [openError, setOpenError] = useState<string>();
+
+  async function handleOpenFile(path: string) {
+    setOpenError(undefined);
+    try {
+      await revealItemInDir(path);
+    } catch (err) {
+      setOpenError(String(err));
+    }
+  }
+
+  return (
+    <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm transition">
+      {/* Header */}
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-slate-500" />
+          <h3 className="text-sm font-bold text-slate-800">{t("recent")}</h3>
+        </div>
+        {recentFiles.length > 0 && (
+          <button
+            type="button"
+            onClick={clearRecentFiles}
+            className="text-xs font-semibold text-slate-400 hover:text-slate-600 transition"
+          >
+            {t("clear")}
+          </button>
+        )}
+      </div>
+
+      {openError && (
+        <p role="alert" className="mb-2 text-xs text-red-600">
+          {openError}
+        </p>
+      )}
+
+      {/* List */}
+      <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+        {recentFiles.length === 0 ? (
+          <p className="py-6 text-center text-xs text-slate-400">{t("noRecentFiles")}</p>
+        ) : (
+          recentFiles.slice(0, 10).map((item) => {
+            const basename = getBasename(item.outputPath || item.name);
+            const metaText = [item.targetFormat.toUpperCase(), item.sizeFormatted]
+              .filter(Boolean)
+              .join(" • ");
+
+            return (
+              <div
+                key={item.id}
+                onClick={() => void handleOpenFile(item.outputPath || item.inputPath)}
+                className="group flex cursor-pointer items-center justify-between rounded-2xl border border-slate-100 bg-slate-50/50 p-3 hover:border-slate-200 hover:bg-slate-100/70 transition"
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <FormatIcon format={item.targetFormat} category={item.category} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-bold text-slate-800 group-hover:text-emerald-800 transition" title={basename}>
+                      {basename}
+                    </p>
+                    <p className="text-[11px] text-slate-400">{metaText}</p>
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2 pl-2 text-right">
+                  <span className="text-[11px] font-medium text-slate-400">
+                    {formatTimeAgo(item.timestamp, i18n.language)}
+                  </span>
+                  <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-700 transition" />
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}

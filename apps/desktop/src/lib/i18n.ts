@@ -8,9 +8,6 @@ function getInitialLanguage(): string {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("recast_language");
       if (saved === "tr" || saved === "en") return saved;
-      if (navigator.language && navigator.language.toLowerCase().startsWith("tr")) {
-        return "tr";
-      }
     }
   } catch {
     // Ignore storage access errors

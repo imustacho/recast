@@ -7,9 +7,19 @@ export function availableTargetFormats(
   if (!capabilities) return [];
   if (!files.length) return capabilities.formats.map((format) => format.id);
 
+  const normalize = (value: string) => value.trim().replace(/^\./, "").toLowerCase();
+  const formatsByExtension = new Map<string, string>();
+  capabilities.formats.forEach((format) => {
+    formatsByExtension.set(normalize(format.id), format.id);
+    format.extensions.forEach((extension) => formatsByExtension.set(normalize(extension), format.id));
+  });
+
   const getTargets = (file: MediaFile): string[] => {
-    if (capabilities.targetsBySourceFormat && file.detectedFormat in capabilities.targetsBySourceFormat) {
-      return capabilities.targetsBySourceFormat[file.detectedFormat] ?? [];
+    const detected = normalize(file.detectedFormat);
+    const sourceId = formatsByExtension.get(detected) ?? detected;
+    const sourceTargets = capabilities.targetsBySourceFormat?.[sourceId];
+    if (sourceTargets) {
+      return sourceTargets;
     }
     return capabilities.targetsBySourceCategory[file.category] ?? [];
   };

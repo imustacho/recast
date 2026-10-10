@@ -74,4 +74,12 @@ describe("availableTargetFormats", () => {
       ]),
     ).toEqual(["pdf"]);
   });
+
+  it("normalizes dotted, uppercase format aliases reported by platform pickers", () => {
+    expect(availableTargetFormats(capabilities, [file("document", ".DOCX")])).toEqual([
+      "pdf",
+      "odt",
+      "txt",
+    ]);
+  });
 });

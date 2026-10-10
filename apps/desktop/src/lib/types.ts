@@ -63,3 +63,24 @@ export interface EngineStatus {
   libreoffice: boolean;
   libreofficeVersion?: string;
 }
+
+export interface RecentConversionItem {
+  id: string;
+  name: string;
+  inputPath: string;
+  outputPath?: string;
+  targetFormat: string;
+  category: MediaCategory;
+  sizeFormatted?: string;
+  timestamp: number;
+  success: boolean;
+  error?: string;
+}
+
+export interface AppSettings {
+  theme: "system" | "light" | "dark";
+  language: "en" | "tr";
+  keepOriginals: boolean;
+  overwriteExisting: boolean;
+  outputFolder: string | null;
+}
