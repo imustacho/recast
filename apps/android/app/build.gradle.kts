@@ -25,8 +25,6 @@ android {
                 storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "recastandroid"
                 keyAlias = System.getenv("KEY_ALIAS") ?: "recast"
                 keyPassword = System.getenv("KEY_PASSWORD") ?: "recastandroid"
-            } else {
-                initWith(getByName("debug"))
             }
         }
     }
@@ -34,7 +32,12 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
+            val releaseKeystore = file("release.keystore")
+            if (releaseKeystore.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
