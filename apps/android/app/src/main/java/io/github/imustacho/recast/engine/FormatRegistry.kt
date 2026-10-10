@@ -14,10 +14,8 @@ object FormatRegistry {
         CodecDefinition("bmp", "video", "bmp", emptyList()),
         CodecDefinition("tiff", "video", "tiff", emptyList()),
         CodecDefinition("gif", "video", "gif", emptyList()),
-        CodecDefinition("av1", "video", "libaom-av1", listOf("-crf", "30", "-b:v", "0", "-still-picture", "1")),
-        CodecDefinition("h264", "video", "libx264", listOf("-preset", "medium", "-crf", "23")),
-        CodecDefinition("vp9", "video", "libvpx-vp9", listOf("-crf", "31", "-b:v", "0")),
         CodecDefinition("mpeg4", "video", "mpeg4", listOf("-q:v", "5")),
+        CodecDefinition("vp9", "video", "libvpx-vp9", listOf("-crf", "31", "-b:v", "0")),
         CodecDefinition("mpeg2", "video", "mpeg2video", listOf("-q:v", "5")),
         CodecDefinition("theora", "video", "libtheora", listOf("-q:v", "7")),
         CodecDefinition("mp3", "audio", "libmp3lame", listOf("-q:a", "2")),
@@ -40,7 +38,6 @@ object FormatRegistry {
         FormatDefinition("bmp", "BMP", "image", listOf("bmp"), listOf("image/bmp"), "bmp", defaultVideoCodec = "bmp"),
         FormatDefinition("tiff", "TIFF", "image", listOf("tif", "tiff"), listOf("image/tiff"), "tiff", defaultVideoCodec = "tiff"),
         FormatDefinition("gif", "GIF", "image", listOf("gif"), listOf("image/gif"), "gif", defaultVideoCodec = "gif"),
-        FormatDefinition("avif", "AVIF", "image", listOf("avif"), listOf("image/avif"), "avif", defaultVideoCodec = "av1"),
 
         // Audio formats
         FormatDefinition("mp3", "MP3", "audio", listOf("mp3"), listOf("audio/mpeg"), "mp3", ffmpegFormat = "mp3", defaultAudioCodec = "mp3"),
@@ -55,12 +52,12 @@ object FormatRegistry {
         FormatDefinition("ac3", "AC3", "audio", listOf("ac3"), listOf("audio/ac3"), "ac3", ffmpegFormat = "ac3", defaultAudioCodec = "ac3"),
 
         // Video formats
-        FormatDefinition("mp4", "MP4", "video", listOf("mp4"), listOf("video/mp4"), "mp4", ffmpegFormat = "mp4", defaultVideoCodec = "h264", defaultAudioCodec = "aac"),
-        FormatDefinition("mkv", "MKV", "video", listOf("mkv"), listOf("video/x-matroska"), "mkv", ffmpegFormat = "matroska", defaultVideoCodec = "h264", defaultAudioCodec = "aac"),
+        FormatDefinition("mp4", "MP4", "video", listOf("mp4"), listOf("video/mp4"), "mp4", ffmpegFormat = "mp4", defaultVideoCodec = "mpeg4", defaultAudioCodec = "aac"),
+        FormatDefinition("mkv", "MKV", "video", listOf("mkv"), listOf("video/x-matroska"), "mkv", ffmpegFormat = "matroska", defaultVideoCodec = "mpeg4", defaultAudioCodec = "aac"),
         FormatDefinition("webm", "WebM", "video", listOf("webm"), listOf("video/webm"), "webm", ffmpegFormat = "webm", defaultVideoCodec = "vp9", defaultAudioCodec = "opus"),
-        FormatDefinition("mov", "MOV", "video", listOf("mov"), listOf("video/quicktime"), "mov", ffmpegFormat = "mov", defaultVideoCodec = "h264", defaultAudioCodec = "aac"),
+        FormatDefinition("mov", "MOV", "video", listOf("mov"), listOf("video/quicktime"), "mov", ffmpegFormat = "mov", defaultVideoCodec = "mpeg4", defaultAudioCodec = "aac"),
         FormatDefinition("avi", "AVI", "video", listOf("avi"), listOf("video/x-msvideo"), "avi", ffmpegFormat = "avi", defaultVideoCodec = "mpeg4", defaultAudioCodec = "mp3"),
-        FormatDefinition("m4v", "M4V", "video", listOf("m4v"), listOf("video/x-m4v"), "m4v", ffmpegFormat = "ipod", defaultVideoCodec = "h264", defaultAudioCodec = "aac"),
+        FormatDefinition("m4v", "M4V", "video", listOf("m4v"), listOf("video/x-m4v"), "m4v", ffmpegFormat = "ipod", defaultVideoCodec = "mpeg4", defaultAudioCodec = "aac"),
         FormatDefinition("mpeg", "MPEG / MPG", "video", listOf("mpeg", "mpg"), listOf("video/mpeg"), "mpeg", ffmpegFormat = "mpeg", defaultVideoCodec = "mpeg2", defaultAudioCodec = "mp2"),
         FormatDefinition("ogv", "OGV", "video", listOf("ogv"), listOf("video/ogg"), "ogv", ffmpegFormat = "ogg", defaultVideoCodec = "theora", defaultAudioCodec = "vorbis"),
         FormatDefinition("ts", "TS / MTS / M2TS", "video", listOf("ts", "mts", "m2ts"), listOf("video/mp2t"), "ts", ffmpegFormat = "mpegts", defaultVideoCodec = "mpeg2", defaultAudioCodec = "mp2"),
@@ -85,17 +82,51 @@ object FormatRegistry {
     )
 
     fun getCapabilities(): ConversionCapabilities {
-        val targetsByCategory = mutableMapOf<String, List<String>>()
-        val categories = listOf("image", "video", "audio", "document")
-        for (category in categories) {
-            targetsByCategory[category] = formats.filter { it.category == category }.map { it.id }
+        val targetsByFormat = formats.associate { format ->
+            format.id to targetFormatsFor(format.id)
         }
+
+        val targetsByCategory = mapOf(
+            "image" to formats.filter { it.category == "image" }.map { it.id },
+            "audio" to formats.filter { it.category == "audio" }.map { it.id },
+            "video" to formats.filter { it.category == "video" || it.category == "audio" }.map { it.id },
+            "document" to formats.filter { it.category == "document" }.map { it.id }
+        )
 
         return ConversionCapabilities(
             formats = formats,
             codecs = codecs,
-            targetsBySourceCategory = targetsByCategory
+            targetsBySourceCategory = targetsByCategory,
+            targetsBySourceFormat = targetsByFormat
         )
+    }
+
+    private fun targetFormatsFor(sourceFormat: String): List<String> {
+        val source = findFormatById(sourceFormat) ?: return emptyList()
+        return when (source.category) {
+            "image" -> formats
+                .filter { it.category == "image" && it.id != source.id }
+                .map { it.id } + "pdf"
+            "audio" -> formats.filter { it.category == "audio" && it.id != source.id }.map { it.id }
+            "video" -> formats.filter {
+                (it.category == "video" || it.category == "audio") && it.id != source.id
+            }.map { it.id }
+            "document" -> when (source.id) {
+                "pdf" -> listOf("txt", "png", "jpg")
+                "txt" -> listOf("pdf")
+                "md" -> listOf("html", "txt", "pdf")
+                "html" -> listOf("txt", "pdf")
+                "csv" -> listOf("tsv", "txt")
+                "tsv" -> listOf("csv", "txt")
+                "docx" -> listOf("txt", "html", "pdf")
+                else -> emptyList()
+            }
+            else -> emptyList()
+        }
+    }
+
+    fun isConversionSupported(sourceFormat: String, targetFormat: String): Boolean {
+        return targetFormatsFor(sourceFormat).any { it.equals(targetFormat, ignoreCase = true) }
     }
 
     fun findFormatById(id: String): FormatDefinition? {
@@ -124,7 +155,6 @@ object FormatRegistry {
                     "bmp" -> args.addAll(listOf("-c:v", "bmp"))
                     "tiff" -> args.addAll(listOf("-c:v", "tiff"))
                     "gif" -> args.addAll(listOf("-c:v", "gif"))
-                    "avif" -> args.addAll(listOf("-c:v", "libaom-av1", "-crf", "30", "-b:v", "0", "-still-picture", "1"))
                     else -> return null
                 }
             }
@@ -144,13 +174,16 @@ object FormatRegistry {
                 }
             }
             "video" -> {
+                if (target.category == "audio") {
+                    return getFFmpegArgsFor("audio", targetFormat)
+                }
                 when (targetFormat) {
-                    "mp4" -> args.addAll(listOf("-c:v", "libx264", "-preset", "medium", "-crf", "23", "-c:a", "aac", "-b:a", "192k"))
-                    "mkv" -> args.addAll(listOf("-c:v", "libx264", "-preset", "medium", "-crf", "23", "-c:a", "aac", "-b:a", "192k"))
+                    "mp4" -> args.addAll(listOf("-c:v", "mpeg4", "-q:v", "5", "-c:a", "aac", "-b:a", "192k"))
+                    "mkv" -> args.addAll(listOf("-c:v", "mpeg4", "-q:v", "5", "-c:a", "aac", "-b:a", "192k"))
                     "webm" -> args.addAll(listOf("-c:v", "libvpx-vp9", "-crf", "31", "-b:v", "0", "-c:a", "libopus", "-b:a", "160k"))
-                    "mov" -> args.addAll(listOf("-c:v", "libx264", "-preset", "medium", "-crf", "23", "-c:a", "aac", "-b:a", "192k"))
+                    "mov" -> args.addAll(listOf("-c:v", "mpeg4", "-q:v", "5", "-c:a", "aac", "-b:a", "192k"))
                     "avi" -> args.addAll(listOf("-c:v", "mpeg4", "-q:v", "5", "-c:a", "libmp3lame", "-q:a", "2"))
-                    "m4v" -> args.addAll(listOf("-c:v", "libx264", "-preset", "medium", "-crf", "23", "-c:a", "aac", "-b:a", "192k"))
+                    "m4v" -> args.addAll(listOf("-c:v", "mpeg4", "-q:v", "5", "-c:a", "aac", "-b:a", "192k"))
                     "mpeg" -> args.addAll(listOf("-c:v", "mpeg2video", "-q:v", "5", "-c:a", "mp2", "-b:a", "192k"))
                     "ogv" -> args.addAll(listOf("-c:v", "libtheora", "-q:v", "7", "-c:a", "libvorbis", "-q:a", "5"))
                     "ts" -> args.addAll(listOf("-c:v", "mpeg2video", "-q:v", "5", "-c:a", "mp2", "-b:a", "192k"))
@@ -160,6 +193,12 @@ object FormatRegistry {
             else -> return null
         }
 
+        if (target.category == "video") {
+            args.addAll(listOf("-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2", "-pix_fmt", "yuv420p"))
+            if (target.id in setOf("mpeg", "ts")) args.addAll(listOf("-r", "25"))
+        }
+        if (target.id in setOf("opus", "ac3", "mpeg", "ts")) args.addAll(listOf("-ar", "48000"))
+        target.ffmpegFormat?.let { args.addAll(listOf("-f", it)) }
         return args
     }
 }

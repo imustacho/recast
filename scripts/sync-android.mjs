@@ -35,6 +35,9 @@ if (existsSync(indexHtmlPath)) {
     <script>
       (function() {
         if (window.__TAURI_INTERNALS__) return;
+        // @tauri-apps/api v2 detects the runtime through this global flag.
+        // Without it, isTauri() returns false and the UI skips capability loading.
+        window.isTauri = true;
         window.__recast_callbacks = {};
         window.__TAURI_INTERNALS__ = {
             invoke: function(cmd, args, options) {

@@ -10,7 +10,10 @@ import io.github.imustacho.recast.engine.FormatRegistry
 import io.github.imustacho.recast.model.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -20,11 +23,16 @@ class TauriBridge(
     private val webView: WebView
 ) {
     private val gson = Gson()
-    private val scope = CoroutineScope(Dispatchers.Main)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val conversionEngine = ConversionEngine(activity)
 
     @JavascriptInterface
     fun invoke(cmd: String, argsJson: String, callbackId: String) {
+        if (!callbackId.matches(Regex("[A-Za-z0-9_-]{1,100}"))) return
+        if (cmd.length > 100 || argsJson.length > 1_000_000) {
+            postError(callbackId, "Geçersiz Android köprü isteği")
+            return
+        }
         scope.launch(Dispatchers.IO) {
             try {
                 when (cmd) {
@@ -98,7 +106,7 @@ class TauriBridge(
                     }
 
                     "plugin:dialog|open" -> {
-                        activity.launchFilePicker(callbackId)
+                        withContext(Dispatchers.Main) { activity.launchFilePicker(callbackId) }
                     }
 
                     "plugin:opener|reveal_item_in_dir", "plugin:opener|open_path" -> {
@@ -109,51 +117,56 @@ class TauriBridge(
                             else -> null
                         }
                         if (!path.isNullOrEmpty()) {
-                            activity.openFile(path)
+                            withContext(Dispatchers.Main) { activity.openFile(path) }
                         }
                         postSuccess(callbackId, "null")
                     }
 
                     "open_external_url", "plugin:opener|open_url" -> {
-                        val json = gson.fromJson(argsJson, JsonObject::class.java)
-                        val url = json.get("url")?.asString
-                        if (!url.isNullOrEmpty()) {
-                            activity.openWebUrl(url)
-                        }
-                        postSuccess(callbackId, "null")
+                        postError(callbackId, "Recast tamamen çevrimdışı çalışır; dış bağlantılar kapalıdır")
                     }
 
                     "install_libreoffice" -> {
                         postSuccess(callbackId, gson.toJson("Android document engine is already integrated."))
                     }
 
+                    "plugin:event|listen" -> postSuccess(callbackId, "1")
+                    "plugin:event|unlisten" -> postSuccess(callbackId, "null")
+
                     else -> {
-                        // Return empty object for unsupported non-critical commands
-                        postSuccess(callbackId, "{}")
+                        postError(callbackId, "Desteklenmeyen Android komutu: $cmd")
                     }
                 }
-            } catch (e: Exception) {
-                postError(callbackId, e.message ?: "Execution failed")
+            } catch (failure: Throwable) {
+                postError(callbackId, failure.message ?: failure.javaClass.simpleName)
             }
         }
     }
 
     fun postSuccess(callbackId: String, resultJson: String) {
         activity.runOnUiThread {
-            val script = "if (window.__recast_callbacks && window.__recast_callbacks['$callbackId']) { " +
-                    "window.__recast_callbacks['$callbackId'].resolve($resultJson); " +
-                    "delete window.__recast_callbacks['$callbackId']; }"
+            if (activity.isFinishing || activity.isDestroyed) return@runOnUiThread
+            val callbackKey = gson.toJson(callbackId)
+            val script = "if (window.__recast_callbacks && window.__recast_callbacks[$callbackKey]) { " +
+                    "window.__recast_callbacks[$callbackKey].resolve($resultJson); " +
+                    "delete window.__recast_callbacks[$callbackKey]; }"
             webView.evaluateJavascript(script, null)
         }
     }
 
     fun postError(callbackId: String, errorMsg: String) {
         activity.runOnUiThread {
-            val escapedError = gson.toJson(errorMsg)
-            val script = "if (window.__recast_callbacks && window.__recast_callbacks['$callbackId']) { " +
-                    "window.__recast_callbacks['$callbackId'].reject(new Error($escapedError)); " +
-                    "delete window.__recast_callbacks['$callbackId']; }"
+            if (activity.isFinishing || activity.isDestroyed) return@runOnUiThread
+            val callbackKey = gson.toJson(callbackId)
+            val escapedError = gson.toJson(errorMsg.take(4000))
+            val script = "if (window.__recast_callbacks && window.__recast_callbacks[$callbackKey]) { " +
+                    "window.__recast_callbacks[$callbackKey].reject(new Error($escapedError)); " +
+                    "delete window.__recast_callbacks[$callbackKey]; }"
             webView.evaluateJavascript(script, null)
         }
+    }
+
+    fun close() {
+        scope.cancel()
     }
 }

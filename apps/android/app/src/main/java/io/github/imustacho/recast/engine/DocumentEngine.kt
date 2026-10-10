@@ -2,38 +2,42 @@ package io.github.imustacho.recast.engine
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument as AndroidPdfDocument
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
-import com.tom_roush.pdfbox.pdmodel.PDPage
-import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
-import com.tom_roush.pdfbox.pdmodel.common.PDRectangle
-import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
 import com.tom_roush.pdfbox.text.PDFTextStripper
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.html.HtmlRenderer
 import org.jsoup.Jsoup
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
+import java.io.InputStream
 import java.util.zip.ZipFile
-import javax.xml.parsers.DocumentBuilderFactory
 
 object DocumentEngine {
 
+    private const val MAX_TEXT_BYTES = 32 * 1024 * 1024
+    private const val MAX_XML_BYTES = 16 * 1024 * 1024
+    private const val MAX_IMAGE_DIMENSION = 4096
+
+    @Volatile
     private var initialized = false
 
+    @Synchronized
     fun init(context: Context) {
         if (!initialized) {
             try {
                 PDFBoxResourceLoader.init(context)
                 initialized = true
-            } catch (e: Exception) {
-                e.printStackTrace()
+            } catch (failure: Throwable) {
+                failure.printStackTrace()
             }
         }
     }
@@ -100,13 +104,13 @@ object DocumentEngine {
                     docxToPdf(inputPath, outputPath)
                 }
                 // Image to PDF
-                src in listOf("png", "jpg", "jpeg", "webp") && tgt == "pdf" -> {
+                src in listOf("png", "jpg", "jpeg", "webp", "bmp", "gif") && tgt == "pdf" -> {
                     imageToPdf(inputPath, outputPath)
                 }
                 else -> {
                     // Fallback: if plain text conversion
                     if (tgt == "txt") {
-                        val content = File(inputPath).readText(Charsets.UTF_8)
+                        val content = readUtf8Limited(File(inputPath))
                         File(outputPath).writeText(content, Charsets.UTF_8)
                     } else {
                         return Result.failure(
@@ -116,70 +120,52 @@ object DocumentEngine {
                 }
             }
             Result.success(outputPath)
-        } catch (e: Exception) {
-            Result.failure(e)
+        } catch (failure: Throwable) {
+            Result.failure(failure)
         }
     }
 
     private fun pdfToText(inputPath: String, outputPath: String) {
         PDDocument.load(File(inputPath)).use { document ->
             val stripper = PDFTextStripper()
-            val text = stripper.getText(document)
+            val text = stripper.getText(document).take(MAX_TEXT_BYTES)
             File(outputPath).writeText(text, Charsets.UTF_8)
         }
     }
 
     private fun textToPdf(inputPath: String, outputPath: String) {
-        val text = File(inputPath).readText(Charsets.UTF_8)
-        val lines = text.lines()
-
-        PDDocument().use { document ->
-            val font = PDType1Font.HELVETICA
-            val fontSize = 11f
-            val leading = 15f
-            val margin = 50f
-            val width = PDRectangle.A4.width - 2 * margin
-            val startY = PDRectangle.A4.height - margin
-
-            var page = PDPage(PDRectangle.A4)
-            document.addPage(page)
-            var contentStream = PDPageContentStream(document, page)
-            contentStream.beginText()
-            contentStream.setFont(font, fontSize)
-            contentStream.newLineAtOffset(margin, startY)
-
-            var currentY = startY
-
-            for (rawLine in lines) {
-                val wrapped = wrapText(rawLine, font, fontSize, width)
-                for (line in wrapped) {
-                    if (currentY <= margin) {
-                        contentStream.endText()
-                        contentStream.close()
-
-                        page = PDPage(PDRectangle.A4)
-                        document.addPage(page)
-                        contentStream = PDPageContentStream(document, page)
-                        contentStream.beginText()
-                        contentStream.setFont(font, fontSize)
-                        contentStream.newLineAtOffset(margin, startY)
-                        currentY = startY
-                    }
-                    val safeLine = sanitizeText(line)
-                    contentStream.showText(safeLine)
-                    contentStream.newLineAtOffset(0f, -leading)
-                    currentY -= leading
-                }
+        val text = readUtf8Limited(File(inputPath))
+        require(text.length <= 1_000_000) { "PDF için metin çok büyük (en fazla 1 milyon karakter)" }
+        // Android's font fallback preserves Turkish and other Unicode characters.
+        val paint = android.text.TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 11f; color = Color.BLACK }
+        val layout = android.text.StaticLayout.Builder.obtain(text, 0, text.length, paint, 495)
+            .setIncludePad(false).setLineSpacing(4f, 1f).build()
+        val pdf = AndroidPdfDocument()
+        try {
+            var firstLine = 0
+            var pageNumber = 1
+            while (firstLine < layout.lineCount) {
+                require(pageNumber <= 1000) { "PDF 1000 sayfa sınırını aşıyor" }
+                val top = layout.getLineTop(firstLine)
+                var endLine = firstLine + 1
+                while (endLine < layout.lineCount && layout.getLineBottom(endLine) - top <= 742) endLine++
+                val page = pdf.startPage(AndroidPdfDocument.PageInfo.Builder(595, 842, pageNumber++).create())
+                page.canvas.save()
+                page.canvas.clipRect(50f, 50f, 545f, 50f + layout.getLineTop(endLine) - top)
+                page.canvas.translate(50f, 50f - top)
+                layout.draw(page.canvas)
+                page.canvas.restore()
+                pdf.finishPage(page)
+                firstLine = endLine
             }
-
-            contentStream.endText()
-            contentStream.close()
-            document.save(outputPath)
+            FileOutputStream(outputPath).use { pdf.writeTo(it) }
+        } finally {
+            pdf.close()
         }
     }
 
     private fun markdownToHtml(inputPath: String, outputPath: String) {
-        val md = File(inputPath).readText(Charsets.UTF_8)
+        val md = readUtf8Limited(File(inputPath))
         val parser = Parser.builder().build()
         val document = parser.parse(md)
         val renderer = HtmlRenderer.builder().build()
@@ -207,13 +193,13 @@ object DocumentEngine {
     }
 
     private fun htmlToText(inputPath: String, outputPath: String) {
-        val html = File(inputPath).readText(Charsets.UTF_8)
+        val html = readUtf8Limited(File(inputPath))
         val doc = Jsoup.parse(html)
         File(outputPath).writeText(doc.text(), Charsets.UTF_8)
     }
 
     private fun markdownToText(inputPath: String, outputPath: String) {
-        val md = File(inputPath).readText(Charsets.UTF_8)
+        val md = readUtf8Limited(File(inputPath))
         val parser = Parser.builder().build()
         val document = parser.parse(md)
         val renderer = HtmlRenderer.builder().build()
@@ -223,7 +209,7 @@ object DocumentEngine {
     }
 
     private fun formattedTextToPdf(inputPath: String, outputPath: String, type: String) {
-        val raw = File(inputPath).readText(Charsets.UTF_8)
+        val raw = readUtf8Limited(File(inputPath))
         val text = if (type == "md") {
             val parser = Parser.builder().build()
             val document = parser.parse(raw)
@@ -243,44 +229,52 @@ object DocumentEngine {
 
     private fun pdfToImage(inputPath: String, outputPath: String, format: String) {
         val file = File(inputPath)
-        val pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-        val renderer = PdfRenderer(pfd)
-        if (renderer.pageCount > 0) {
-            val page = renderer.openPage(0)
-            val bitmap = Bitmap.createBitmap(page.width, page.height, Bitmap.Config.ARGB_8888)
-            bitmap.eraseColor(Color.WHITE)
-            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-            page.close()
-
-            FileOutputStream(outputPath).use { out ->
-                val compressFormat = if (format == "jpg" || format == "jpeg") {
-                    Bitmap.CompressFormat.JPEG
-                } else {
-                    Bitmap.CompressFormat.PNG
+        ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
+            PdfRenderer(pfd).use { renderer ->
+                require(renderer.pageCount > 0) { "PDF sayfa içermiyor" }
+                renderer.openPage(0).use { page ->
+                    val scale = (MAX_IMAGE_DIMENSION.toFloat() / maxOf(page.width, page.height)).coerceAtMost(1f)
+                    val width = (page.width * scale).toInt().coerceAtLeast(1)
+                    val height = (page.height * scale).toInt().coerceAtLeast(1)
+                    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                    try {
+                        bitmap.eraseColor(Color.WHITE)
+                        val matrix = Matrix().apply { postScale(scale, scale) }
+                        page.render(bitmap, null, matrix, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        FileOutputStream(outputPath).use { out ->
+                            val compressFormat = if (format == "jpg" || format == "jpeg") {
+                                Bitmap.CompressFormat.JPEG
+                            } else {
+                                Bitmap.CompressFormat.PNG
+                            }
+                            check(bitmap.compress(compressFormat, 90, out)) { "Görsel çıktısı yazılamadı" }
+                        }
+                    } finally {
+                        bitmap.recycle()
+                    }
                 }
-                bitmap.compress(compressFormat, 90, out)
             }
         }
-        renderer.close()
-        pfd.close()
     }
 
     private fun imageToPdf(inputPath: String, outputPath: String) {
-        val bitmap = BitmapFactory.decodeFile(inputPath)
-            ?: throw IllegalArgumentException("Could not decode image at $inputPath")
+        val bitmap = ImageEngine.decodeSampledBitmap(inputPath, MAX_IMAGE_DIMENSION)
+            ?: throw IllegalArgumentException("Görsel okunamadı: ${File(inputPath).name}")
 
-        val pdfDoc = AndroidPdfDocument()
-        val pageInfo = AndroidPdfDocument.PageInfo.Builder(bitmap.width, bitmap.height, 1).create()
-        val page = pdfDoc.startPage(pageInfo)
-        val canvas = page.canvas
-        canvas.drawBitmap(bitmap, 0f, 0f, null)
-        pdfDoc.finishPage(page)
-
-        FileOutputStream(outputPath).use { out ->
-            pdfDoc.writeTo(out)
+        try {
+            val pdfDoc = AndroidPdfDocument()
+            try {
+                val pageInfo = AndroidPdfDocument.PageInfo.Builder(bitmap.width, bitmap.height, 1).create()
+                val page = pdfDoc.startPage(pageInfo)
+                page.canvas.drawBitmap(bitmap, 0f, 0f, null)
+                pdfDoc.finishPage(page)
+                FileOutputStream(outputPath).use { out -> pdfDoc.writeTo(out) }
+            } finally {
+                pdfDoc.close()
+            }
+        } finally {
+            bitmap.recycle()
         }
-        pdfDoc.close()
-        bitmap.recycle()
     }
 
     private fun csvToTsv(inputPath: String, outputPath: String, fromSep: Char, toSep: Char) {
@@ -288,11 +282,7 @@ object DocumentEngine {
         val output = File(outputPath)
         input.bufferedReader(Charsets.UTF_8).use { reader ->
             output.bufferedWriter(Charsets.UTF_8).use { writer ->
-                reader.forEachLine { line ->
-                    val converted = line.replace(fromSep, toSep)
-                    writer.write(converted)
-                    writer.newLine()
-                }
+                DelimitedText.convert(reader, writer, fromSep, toSep)
             }
         }
     }
@@ -304,7 +294,9 @@ object DocumentEngine {
 
     private fun docxToHtml(inputPath: String, outputPath: String) {
         val text = extractTextFromDocx(inputPath)
-        val paragraphs = text.split("\n\n").joinToString("\n") { "<p>${it.replace("\n", "<br/>")}</p>" }
+        val paragraphs = text.split("\n\n").joinToString("\n") {
+            "<p>${escapeHtml(it).replace("\n", "<br/>")}</p>"
+        }
         val html = """
             <!DOCTYPE html>
             <html>
@@ -329,69 +321,66 @@ object DocumentEngine {
     private fun extractTextFromDocx(inputPath: String): String {
         ZipFile(inputPath).use { zip ->
             val entry = zip.getEntry("word/document.xml")
-                ?: return ""
+                ?: throw IllegalArgumentException("Geçerli DOCX belge içeriği bulunamadı")
+            require(entry.size < 0 || entry.size <= MAX_XML_BYTES) { "DOCX içeriği güvenli boyut sınırını aşıyor" }
             zip.getInputStream(entry).use { stream ->
-                val builder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
-                val doc = builder.parse(stream)
-                val paragraphs = doc.getElementsByTagName("w:p")
+                val parser = org.xmlpull.v1.XmlPullParserFactory.newInstance().apply { isNamespaceAware = true }.newPullParser()
+                parser.setInput(ByteArrayInputStream(readLimited(stream, MAX_XML_BYTES)), null)
                 val sb = StringBuilder()
-                for (i in 0 until paragraphs.length) {
-                    val p = paragraphs.item(i)
-                    val texts = (p as? org.w3c.dom.Element)?.getElementsByTagName("w:t") ?: continue
-                    for (j in 0 until texts.length) {
-                        sb.append(texts.item(j).textContent)
+                var inText = false
+                val wordNamespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+                val strictNamespace = "http://purl.oclc.org/ooxml/wordprocessingml/main"
+                var event = parser.nextToken()
+                while (event != org.xmlpull.v1.XmlPullParser.END_DOCUMENT) {
+                    require(event != org.xmlpull.v1.XmlPullParser.DOCDECL) { "DOCX içinde DTD desteklenmiyor" }
+                    val word = parser.namespace == wordNamespace || parser.namespace == strictNamespace
+                    when (event) {
+                        org.xmlpull.v1.XmlPullParser.START_TAG -> if (word) when (parser.name) {
+                            "t" -> inText = true
+                            "tab" -> sb.append('\t')
+                            "br", "cr" -> sb.append('\n')
+                        }
+                        org.xmlpull.v1.XmlPullParser.END_TAG -> if (word) when (parser.name) {
+                            "t" -> inText = false
+                            "p" -> sb.append('\n')
+                        }
+                        org.xmlpull.v1.XmlPullParser.TEXT, org.xmlpull.v1.XmlPullParser.CDSECT,
+                        org.xmlpull.v1.XmlPullParser.ENTITY_REF -> if (inText) {
+                            require(parser.text != null) { "DOCX tanımsız XML varlığı içeriyor" }
+                            sb.append(parser.text)
+                        }
                     }
-                    sb.append("\n")
+                    require(sb.length <= MAX_TEXT_BYTES) { "DOCX metin sınırını aşıyor" }
+                    event = parser.nextToken()
                 }
                 return sb.toString()
             }
         }
     }
 
-    private fun sanitizeText(input: String): String {
-        val sb = StringBuilder()
-        for (c in input) {
-            if (c.code in 32..126) {
-                sb.append(c)
-            } else if (c == '\t') {
-                sb.append("    ")
-            } else {
-                sb.append('?')
-            }
-        }
-        return sb.toString()
+    private fun readUtf8Limited(file: File): String {
+        require(file.length() <= MAX_TEXT_BYTES) { "Metin dosyası 32 MB sınırını aşıyor" }
+        return file.inputStream().use { readLimited(it, MAX_TEXT_BYTES).toString(Charsets.UTF_8) }
     }
 
-    private fun wrapText(
-        text: String,
-        font: PDType1Font,
-        fontSize: Float,
-        maxWidth: Float
-    ): List<String> {
-        val result = mutableListOf<String>()
-        val words = text.split(" ")
-        var currentLine = StringBuilder()
-
-        for (word in words) {
-            val candidate = if (currentLine.isEmpty()) word else "$currentLine $word"
-            val width = try {
-                font.getStringWidth(sanitizeText(candidate)) / 1000 * fontSize
-            } catch (e: Exception) {
-                candidate.length * (fontSize * 0.6f)
-            }
-
-            if (width > maxWidth && currentLine.isNotEmpty()) {
-                result.add(currentLine.toString())
-                currentLine = StringBuilder(word)
-            } else {
-                currentLine = StringBuilder(candidate)
-            }
+    private fun readLimited(input: InputStream, maxBytes: Int): ByteArray {
+        val output = ByteArrayOutputStream(minOf(maxBytes, 8192))
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        var total = 0
+        while (true) {
+            val count = input.read(buffer)
+            if (count < 0) break
+            total += count
+            require(total <= maxBytes) { "Dosya güvenli boyut sınırını aşıyor" }
+            output.write(buffer, 0, count)
         }
-
-        if (currentLine.isNotEmpty()) {
-            result.add(currentLine.toString())
-        }
-
-        return if (result.isEmpty()) listOf("") else result
+        return output.toByteArray()
     }
+
+    private fun escapeHtml(value: String): String = value
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
+
 }

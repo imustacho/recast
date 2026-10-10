@@ -4,6 +4,9 @@
     <script>
       (function() {
         if (window.__TAURI_INTERNALS__) return;
+        // @tauri-apps/api v2 detects the runtime through this global flag.
+        // Without it, isTauri() returns false and the UI skips capability loading.
+        window.isTauri = true;
         window.__recast_callbacks = {};
         window.__TAURI_INTERNALS__ = {
             invoke: function(cmd, args, options) {
@@ -42,10 +45,11 @@
   
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
     <meta name="description" content="Private, offline file conversion." />
     <title>Recast</title>
-    <script type="module" crossorigin src="./assets/index-CaKXEau8.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-B8r1fTq-.css">
+    <script type="module" crossorigin src="./assets/index-D1LU4Ctz.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CnzD5oFf.css">
   </head>
   <body class="bg-slate-100">
     <div id="root"></div>

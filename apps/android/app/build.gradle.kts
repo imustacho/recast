@@ -51,8 +51,8 @@ android {
     }
 
     lint {
-        checkReleaseBuilds = false
-        abortOnError = false
+        checkReleaseBuilds = true
+        abortOnError = true
     }
 
     sourceSets {
@@ -88,7 +88,11 @@ dependencies {
     // Document Engine: HTML parsing, text stripping
     implementation("org.jsoup:jsoup:1.18.1")
 
+    // Pure Java GIF89a encoder. Keeps still-image GIF conversion out of native FFmpeg.
+    implementation("com.squareup:gifencoder:0.10.1")
+
     testImplementation("junit:junit:4.13.2")
+    testImplementation("net.sf.kxml:kxml2:2.3.0")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
 }
