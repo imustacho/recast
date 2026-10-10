@@ -3,10 +3,21 @@ import { ArrowLeft, Check, ChevronRight, Globe, Moon, Sun } from "lucide-react";
 import { useState } from "react";
 import recastLogo from "../assets/recast.png?inline";
 import { useAppStore } from "../lib/store";
+import type { SupportedLanguage } from "../lib/types";
 
 interface SettingsScreenProps {
   onBack?: () => void;
 }
+
+const LANGUAGES: { code: SupportedLanguage; label: string; flag: string }[] = [
+  { code: "en", label: "English", flag: "🇺🇸" },
+  { code: "tr", label: "Türkçe", flag: "🇹🇷" },
+  { code: "de", label: "Deutsch", flag: "🇩🇪" },
+  { code: "es", label: "Español", flag: "🇪🇸" },
+  { code: "fr", label: "Français", flag: "🇫🇷" },
+  { code: "it", label: "Italiano", flag: "🇮🇹" },
+  { code: "ru", label: "Русский", flag: "🇷🇺" },
+];
 
 export function SettingsScreen({ onBack }: SettingsScreenProps) {
   const { t, i18n } = useTranslation();
@@ -14,9 +25,10 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   const [showThemePicker, setShowThemePicker] = useState(false);
 
-  const currentLang = i18n.language && i18n.language.startsWith("tr") ? "tr" : "en";
+  const activeCode = (i18n.language && (i18n.language.slice(0, 2) as SupportedLanguage)) || "en";
+  const currentLang = LANGUAGES.find((l) => l.code === activeCode) || LANGUAGES[0];
 
-  function handleSelectLanguage(lang: "tr" | "en") {
+  function handleSelectLanguage(lang: SupportedLanguage) {
     void i18n.changeLanguage(lang);
     try {
       localStorage.setItem("recast_language", lang);
@@ -113,35 +125,32 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("language")}</span>
               </div>
               <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
-                <span>{currentLang === "tr" ? "Türkçe" : "English"}</span>
+                <span className="flex items-center gap-1">
+                  <span>{currentLang.flag}</span>
+                  <span>{currentLang.label}</span>
+                </span>
                 <ChevronRight className="h-4 w-4" />
               </div>
             </div>
 
             {showLanguagePicker && (
-              <div className="border-t border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800 p-2 space-y-1">
-                <button
-                  type="button"
-                  onClick={() => handleSelectLanguage("en")}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
-                >
-                  <span className="flex items-center gap-2">
-                    <span>🇺🇸</span>
-                    <span>English</span>
-                  </span>
-                  {currentLang === "en" && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSelectLanguage("tr")}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
-                >
-                  <span className="flex items-center gap-2">
-                    <span>🇹🇷</span>
-                    <span>Türkçe</span>
-                  </span>
-                  {currentLang === "tr" && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
-                </button>
+              <div className="border-t border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800 p-2 space-y-1 max-h-56 overflow-y-auto">
+                {LANGUAGES.map((lang) => (
+                  <button
+                    key={lang.code}
+                    type="button"
+                    onClick={() => handleSelectLanguage(lang.code)}
+                    className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>{lang.flag}</span>
+                      <span>{lang.label}</span>
+                    </span>
+                    {activeCode === lang.code && (
+                      <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    )}
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -209,7 +218,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
           <div className="overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-800/40">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 p-3.5">
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("version")}</span>
-              <span className="font-mono text-xs text-slate-400 dark:text-slate-500">0.2.2</span>
+              <span className="font-mono text-xs text-slate-400 dark:text-slate-500">0.2.3</span>
             </div>
             <div className="flex items-center justify-between p-3.5">
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("license")}</span>

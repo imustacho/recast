@@ -2,12 +2,22 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import enCommon from "../locales/en/common.json";
 import trCommon from "../locales/tr/common.json";
+import deCommon from "../locales/de/common.json";
+import esCommon from "../locales/es/common.json";
+import frCommon from "../locales/fr/common.json";
+import itCommon from "../locales/it/common.json";
+import ruCommon from "../locales/ru/common.json";
+import type { SupportedLanguage } from "./types";
 
-function getInitialLanguage(): string {
+const SUPPORTED_LANGUAGES: SupportedLanguage[] = ["en", "tr", "de", "es", "fr", "it", "ru"];
+
+function getInitialLanguage(): SupportedLanguage {
   try {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("recast_language");
-      if (saved === "tr" || saved === "en") return saved;
+      if (saved && SUPPORTED_LANGUAGES.includes(saved as SupportedLanguage)) {
+        return saved as SupportedLanguage;
+      }
     }
   } catch {
     // Ignore storage access errors
@@ -21,6 +31,11 @@ void i18n.use(initReactI18next).init({
   resources: {
     en: { translation: enCommon },
     tr: { translation: trCommon },
+    de: { translation: deCommon },
+    es: { translation: esCommon },
+    fr: { translation: frCommon },
+    it: { translation: itCommon },
+    ru: { translation: ruCommon },
   },
   interpolation: {
     escapeValue: false,
@@ -28,4 +43,3 @@ void i18n.use(initReactI18next).init({
 });
 
 export default i18n;
-

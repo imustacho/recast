@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { AppSettings, ConversionJob, MediaFile, RecentConversionItem } from "./types";
+import type { AppSettings, ConversionJob, MediaFile, RecentConversionItem, SupportedLanguage } from "./types";
 
 interface AppState {
   files: MediaFile[];
@@ -33,6 +33,7 @@ interface AppState {
 
 const RECENT_STORAGE_KEY = "recast_recent_conversions";
 const SETTINGS_STORAGE_KEY = "recast_app_settings";
+const SUPPORTED_LANGUAGES: SupportedLanguage[] = ["en", "tr", "de", "es", "fr", "it", "ru"];
 
 function loadStoredRecent(): RecentConversionItem[] {
   try {
@@ -65,8 +66,8 @@ function loadStoredSettings(): AppSettings {
     const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
     if (!raw) {
       const savedLang = localStorage.getItem("recast_language");
-      if (savedLang === "tr" || savedLang === "en") {
-        defaultSettings.language = savedLang;
+      if (savedLang && SUPPORTED_LANGUAGES.includes(savedLang as SupportedLanguage)) {
+        defaultSettings.language = savedLang as SupportedLanguage;
       }
       return defaultSettings;
     }

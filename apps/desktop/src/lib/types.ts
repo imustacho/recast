@@ -77,9 +77,11 @@ export interface RecentConversionItem {
   error?: string;
 }
 
+export type SupportedLanguage = "en" | "tr" | "de" | "es" | "fr" | "it" | "ru";
+
 export interface AppSettings {
   theme: "system" | "light" | "dark";
-  language: "en" | "tr";
+  language: SupportedLanguage;
   keepOriginals: boolean;
   overwriteExisting: boolean;
   outputFolder: string | null;

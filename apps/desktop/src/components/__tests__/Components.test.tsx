@@ -19,6 +19,12 @@ describe("Format Utilities", () => {
     const now = Date.now();
     expect(formatTimeAgo(now - 10000, "en")).toBe("Just now");
     expect(formatTimeAgo(now - 10000, "tr")).toBe("Az önce");
+    expect(formatTimeAgo(now - 10000, "de")).toBe("Gerade eben");
+    expect(formatTimeAgo(now - 10000, "es")).toBe("Hace un momento");
+    expect(formatTimeAgo(now - 10000, "fr")).toBe("À l'instant");
+    expect(formatTimeAgo(now - 10000, "it")).toBe("Proprio ora");
+    expect(formatTimeAgo(now - 10000, "ru")).toBe("Только что");
+
     expect(formatTimeAgo(now - 120000, "en")).toBe("2m ago");
     expect(formatTimeAgo(now - 120000, "tr")).toBe("2dk önce");
     expect(formatTimeAgo(now - 7200000, "en")).toBe("2h ago");
@@ -179,5 +185,19 @@ describe("SettingsScreen", () => {
     // Find the toggle button
     fireEvent.click(toggleButtons[0]);
     expect(useAppStore.getState().settings.keepOriginals).toBe(!initialState);
+  });
+
+  it("allows selecting different languages", () => {
+    render(<SettingsScreen />);
+    fireEvent.click(screen.getByText(/language/i));
+
+    expect(screen.getByText("Deutsch")).toBeInTheDocument();
+    expect(screen.getByText("Español")).toBeInTheDocument();
+    expect(screen.getByText("Français")).toBeInTheDocument();
+    expect(screen.getByText("Italiano")).toBeInTheDocument();
+    expect(screen.getByText("Русский")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Deutsch"));
+    expect(useAppStore.getState().settings.language).toBe("de");
   });
 });
