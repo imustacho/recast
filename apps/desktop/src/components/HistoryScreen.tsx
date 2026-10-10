@@ -27,27 +27,27 @@ export function HistoryScreen({ items, onClearList, onBack }: HistoryScreenProps
   }
 
   return (
-    <div className="flex h-full min-h-[500px] w-full flex-col justify-between rounded-3xl bg-white p-6 shadow-sm">
+    <div className="flex h-full min-h-[500px] w-full flex-col justify-between rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-6 shadow-sm transition">
       {/* Top Header */}
       <div>
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
           <div className="flex items-center gap-3">
             {onBack && (
               <button
                 type="button"
                 onClick={onBack}
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 transition"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                 aria-label="Back"
               >
                 <ArrowLeft className="h-5 w-5" />
               </button>
             )}
-            <h2 className="text-base font-bold text-slate-900">{t("convertedFiles")}</h2>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">{t("convertedFiles")}</h2>
           </div>
 
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 transition"
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
             aria-label="More"
           >
             <MoreVertical className="h-4 w-4" />
@@ -55,7 +55,7 @@ export function HistoryScreen({ items, onClearList, onBack }: HistoryScreenProps
         </div>
 
         {openError && (
-          <p role="alert" className="mt-3 text-xs text-red-600">
+          <p role="alert" className="mt-3 text-xs text-red-600 dark:text-red-400">
             {openError}
           </p>
         )}
@@ -63,7 +63,7 @@ export function HistoryScreen({ items, onClearList, onBack }: HistoryScreenProps
         {/* List of converted files */}
         <div className="mt-4 max-h-[460px] space-y-2.5 overflow-y-auto pr-1">
           {items.length === 0 ? (
-            <div className="py-16 text-center text-sm text-slate-400">
+            <div className="py-16 text-center text-sm text-slate-400 dark:text-slate-500">
               {t("noRecentFiles")}
             </div>
           ) : (
@@ -81,19 +81,19 @@ export function HistoryScreen({ items, onClearList, onBack }: HistoryScreenProps
                 <div
                   key={item.id}
                   onClick={() => void handleOpenFile(item)}
-                  className="group flex cursor-pointer items-center justify-between rounded-2xl border border-slate-100 bg-white p-3.5 hover:border-slate-200 hover:bg-slate-50/70 transition"
+                  className="group flex cursor-pointer items-center justify-between rounded-2xl border border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800/40 p-3.5 hover:border-slate-200 dark:hover:border-slate-600 hover:bg-slate-50/70 dark:hover:bg-slate-700/50 transition"
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
                     <FormatIcon format={item.targetFormat} category={item.category} size="md" />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-slate-800 group-hover:text-emerald-800 transition" title={basename}>
+                      <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-emerald-800 dark:group-hover:text-emerald-400 transition" title={basename}>
                         {basename}
                       </p>
-                      <p className="text-xs text-slate-400">{metaText}</p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500">{metaText}</p>
                     </div>
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-2 pl-2 text-slate-400 group-hover:text-slate-600 transition">
+                  <div className="flex shrink-0 items-center gap-2 pl-2 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition">
                     <ChevronRight className="h-4 w-4" />
                   </div>
                 </div>
@@ -105,11 +105,11 @@ export function HistoryScreen({ items, onClearList, onBack }: HistoryScreenProps
 
       {/* Clear List Button */}
       {items.length > 0 && (
-        <div className="border-t border-slate-100 pt-4">
+        <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
           <button
             type="button"
             onClick={onClearList}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl py-2.5 text-xs font-semibold text-slate-500 hover:bg-slate-100 hover:text-red-600 transition"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-red-600 dark:hover:text-red-400 transition"
           >
             <Trash2 className="h-4 w-4" />
             <span>{t("clearList")}</span>

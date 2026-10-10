@@ -23,8 +23,8 @@ export function DesktopSidebar({ activeTab, onSelectTab }: DesktopSidebarProps) 
         <div className="flex items-center gap-3 px-2">
           <img src={recastLogo} alt="Recast logo" className="h-10 w-10 object-contain drop-shadow-xs" />
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">Recast</h1>
-            <p className="text-[11px] text-slate-400 font-medium">{t("appSubtitle")}</p>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Recast</h1>
+            <p className="text-[11px] text-slate-400 dark:text-slate-400 font-medium">{t("appSubtitle")}</p>
           </div>
         </div>
 
@@ -41,11 +41,11 @@ export function DesktopSidebar({ activeTab, onSelectTab }: DesktopSidebarProps) 
                 onClick={() => onSelectTab(item.id)}
                 className={`flex w-full items-center gap-3.5 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                   isActive
-                    ? "bg-emerald-50 text-emerald-800 shadow-xs"
-                    : "text-slate-600 hover:bg-slate-100/70 hover:text-slate-900"
+                    ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 shadow-xs border border-transparent dark:border-emerald-800/40"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100"
                 }`}
               >
-                <Icon className={`h-5 w-5 ${isActive ? "text-emerald-700" : "text-slate-400"}`} />
+                <Icon className={`h-5 w-5 ${isActive ? "text-emerald-700 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}`} />
                 <span>{item.label}</span>
               </button>
             );
@@ -55,7 +55,7 @@ export function DesktopSidebar({ activeTab, onSelectTab }: DesktopSidebarProps) 
 
       {/* Sidebar Footer Tagline */}
       <div className="px-3 pb-4">
-        <p className="text-xs leading-relaxed text-slate-400 font-medium">
+        <p className="text-xs leading-relaxed text-slate-400 dark:text-slate-500 font-medium">
           {t("tagline")}
         </p>
       </div>

@@ -33,43 +33,43 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
   }
 
   return (
-    <div className="flex h-full min-h-[500px] w-full flex-col justify-between rounded-3xl bg-white p-6 shadow-sm">
+    <div className="flex h-full min-h-[500px] w-full flex-col justify-between rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-6 shadow-sm transition">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+        <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
           {onBack && (
             <button
               type="button"
               onClick={onBack}
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 transition"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
               aria-label="Back"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
           )}
-          <h2 className="text-base font-bold text-slate-900">{t("settings")}</h2>
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">{t("settings")}</h2>
         </div>
 
         {/* General Section */}
         <div>
-          <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+          <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
             {t("general")}
           </h3>
-          <div className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/50">
+          <div className="overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-800/40">
             {/* Theme row */}
             <div
               onClick={() => setShowThemePicker(!showThemePicker)}
-              className="flex cursor-pointer items-center justify-between border-b border-slate-100 p-3.5 hover:bg-slate-100/70 transition"
+              className="flex cursor-pointer items-center justify-between border-b border-slate-100 dark:border-slate-700/60 p-3.5 hover:bg-slate-100/70 dark:hover:bg-slate-700/50 transition"
             >
               <div className="flex items-center gap-3">
                 {settings.theme === "dark" ? (
-                  <Moon className="h-4 w-4 text-slate-500" />
+                  <Moon className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                 ) : (
-                  <Sun className="h-4 w-4 text-slate-500" />
+                  <Sun className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                 )}
-                <span className="text-sm font-semibold text-slate-700">{t("theme")}</span>
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("theme")}</span>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-slate-400">
+              <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
                 <span className="capitalize">
                   {settings.theme === "system"
                     ? t("themeSystem")
@@ -82,13 +82,13 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
             </div>
 
             {showThemePicker && (
-              <div className="border-b border-slate-100 bg-white p-2 space-y-1">
+              <div className="border-b border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800 p-2 space-y-1">
                 {(["system", "light", "dark"] as const).map((mode) => (
                   <button
                     key={mode}
                     type="button"
                     onClick={() => handleSelectTheme(mode)}
-                    className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                    className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
                   >
                     <span className="capitalize">
                       {mode === "system"
@@ -97,7 +97,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
                         ? t("themeLight")
                         : t("themeDark")}
                     </span>
-                    {settings.theme === mode && <Check className="h-4 w-4 text-emerald-600" />}
+                    {settings.theme === mode && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
                   </button>
                 ))}
               </div>
@@ -106,41 +106,41 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
             {/* Language row */}
             <div
               onClick={() => setShowLanguagePicker(!showLanguagePicker)}
-              className="flex cursor-pointer items-center justify-between p-3.5 hover:bg-slate-100/70 transition"
+              className="flex cursor-pointer items-center justify-between p-3.5 hover:bg-slate-100/70 dark:hover:bg-slate-700/50 transition"
             >
               <div className="flex items-center gap-3">
-                <Globe className="h-4 w-4 text-slate-500" />
-                <span className="text-sm font-semibold text-slate-700">{t("language")}</span>
+                <Globe className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("language")}</span>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-slate-400">
+              <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
                 <span>{currentLang === "tr" ? "Türkçe" : "English"}</span>
                 <ChevronRight className="h-4 w-4" />
               </div>
             </div>
 
             {showLanguagePicker && (
-              <div className="border-t border-slate-100 bg-white p-2 space-y-1">
+              <div className="border-t border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800 p-2 space-y-1">
                 <button
                   type="button"
                   onClick={() => handleSelectLanguage("en")}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
                 >
                   <span className="flex items-center gap-2">
                     <span>🇺🇸</span>
                     <span>English</span>
                   </span>
-                  {currentLang === "en" && <Check className="h-4 w-4 text-emerald-600" />}
+                  {currentLang === "en" && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSelectLanguage("tr")}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
                 >
                   <span className="flex items-center gap-2">
                     <span>🇹🇷</span>
                     <span>Türkçe</span>
                   </span>
-                  {currentLang === "tr" && <Check className="h-4 w-4 text-emerald-600" />}
+                  {currentLang === "tr" && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
                 </button>
               </div>
             )}
@@ -149,26 +149,26 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
 
         {/* Conversion Section */}
         <div>
-          <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+          <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
             {t("conversion")}
           </h3>
-          <div className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/50">
+          <div className="overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-800/40">
             {/* Output folder row */}
-            <div className="flex items-center justify-between border-b border-slate-100 p-3.5">
-              <span className="text-sm font-semibold text-slate-700">{t("outputFolder")}</span>
-              <div className="flex items-center gap-1.5 text-xs text-slate-400">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 p-3.5">
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("outputFolder")}</span>
+              <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
                 <span>{settings.outputFolder || t("defaultOutputFolder")}</span>
               </div>
             </div>
 
             {/* Keep originals toggle */}
-            <div className="flex items-center justify-between border-b border-slate-100 p-3.5">
-              <span className="text-sm font-semibold text-slate-700">{t("keepOriginalFiles")}</span>
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 p-3.5">
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("keepOriginalFiles")}</span>
               <button
                 type="button"
                 onClick={() => updateSettings({ keepOriginals: !settings.keepOriginals })}
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  settings.keepOriginals ? "bg-emerald-600" : "bg-slate-300"
+                  settings.keepOriginals ? "bg-emerald-600 dark:bg-emerald-500" : "bg-slate-300 dark:bg-slate-700"
                 }`}
               >
                 <span
@@ -181,14 +181,14 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
 
             {/* Overwrite existing toggle */}
             <div className="flex items-center justify-between p-3.5">
-              <span className="text-sm font-semibold text-slate-700">
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                 {t("overwriteExistingFiles")}
               </span>
               <button
                 type="button"
                 onClick={() => updateSettings({ overwriteExisting: !settings.overwriteExisting })}
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  settings.overwriteExisting ? "bg-emerald-600" : "bg-slate-300"
+                  settings.overwriteExisting ? "bg-emerald-600 dark:bg-emerald-500" : "bg-slate-300 dark:bg-slate-700"
                 }`}
               >
                 <span
@@ -203,17 +203,17 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
 
         {/* About Section */}
         <div>
-          <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+          <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
             {t("about")}
           </h3>
-          <div className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/50">
-            <div className="flex items-center justify-between border-b border-slate-100 p-3.5">
-              <span className="text-sm font-semibold text-slate-700">{t("version")}</span>
-              <span className="font-mono text-xs text-slate-400">0.2.2</span>
+          <div className="overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-800/40">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 p-3.5">
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("version")}</span>
+              <span className="font-mono text-xs text-slate-400 dark:text-slate-500">0.2.2</span>
             </div>
             <div className="flex items-center justify-between p-3.5">
-              <span className="text-sm font-semibold text-slate-700">{t("license")}</span>
-              <span className="font-mono text-xs text-slate-400">MIT</span>
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("license")}</span>
+              <span className="font-mono text-xs text-slate-400 dark:text-slate-500">MIT</span>
             </div>
           </div>
         </div>
@@ -223,9 +223,9 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
       <div className="mt-8 flex flex-col items-center justify-center pb-2 text-center">
         <div className="flex items-center gap-2">
           <img src={recastLogo} alt="Recast" className="h-6 w-6 object-contain" />
-          <span className="text-sm font-bold text-slate-800">Recast</span>
+          <span className="text-sm font-bold text-slate-800 dark:text-white">Recast</span>
         </div>
-        <p className="mt-0.5 text-[11px] text-slate-400">{t("appSubtitle")}</p>
+        <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">{t("appSubtitle")}</p>
       </div>
     </div>
   );
