@@ -99,6 +99,7 @@ jobs:
 
   android:
     name: Build Android APK
+    needs: publish
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -133,7 +134,16 @@ jobs:
           else
             cp apps/android/app/build/outputs/apk/debug/app-debug.apk "recast-${RELEASE_TAG}.apk"
           fi
-          gh release upload "$RELEASE_TAG" "recast-${RELEASE_TAG}.apk" --repo "$GITHUB_REPOSITORY" --clobber
+          for i in $(seq 1 12); do
+            if gh release upload "$RELEASE_TAG" "recast-${RELEASE_TAG}.apk" --repo "$GITHUB_REPOSITORY" --clobber; then
+              echo "APK uploaded successfully."
+              exit 0
+            fi
+            echo "Release not available yet, waiting 10s (attempt $i/12)..."
+            sleep 10
+          done
+          echo "Failed to upload APK after 12 attempts."
+          exit 1
 
   checksums:
     name: Publish SHA-256 checksums
