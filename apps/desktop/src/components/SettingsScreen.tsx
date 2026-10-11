@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Check, ChevronRight, Globe, Moon, Sun } from "lucide-react";
 import { useState } from "react";
-import recastLogo from "../assets/recast.png?inline";
+import { Brand } from "./Brand";
 import { useAppStore } from "../lib/store";
 import type { SupportedLanguage } from "../lib/types";
 
@@ -48,7 +48,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
   }
 
   return (
-    <div className="flex h-full min-h-[500px] w-full flex-col justify-between rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-6 shadow-sm transition">
+    <div className="flex h-full min-h-[500px] w-full flex-col justify-between surface-card rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 p-6 shadow-sm transition">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -221,7 +221,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
           <div className="overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-800/40">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 p-3.5">
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("version")}</span>
-              <span className="font-mono text-xs text-slate-400 dark:text-slate-500">0.2.4</span>
+              <span className="font-mono text-xs text-slate-400 dark:text-slate-500">3.0.0</span>
             </div>
             <div className="flex items-center justify-between p-3.5">
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("license")}</span>
@@ -233,10 +233,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
 
       {/* Recast branding footer */}
       <div className="mt-8 flex flex-col items-center justify-center pb-2 text-center">
-        <div className="flex items-center gap-2">
-          <img src={recastLogo} alt="Recast" className="h-6 w-6 object-contain" />
-          <span className="text-sm font-bold text-slate-800 dark:text-white">Recast</span>
-        </div>
+        <Brand />
         <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">{t("appSubtitle")}</p>
       </div>
     </div>

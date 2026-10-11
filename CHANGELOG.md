@@ -6,6 +6,21 @@ All notable changes to Recast are documented here. The format follows
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-10-11
+
+### Changed
+
+- Refresh the converter, queue, history, settings, and dialogs with a mint and teal color palette and simpler cards.
+- Remove the desktop top navigation bar and keep settings accessible from the converter.
+- Add Home, History, and Settings navigation on mobile.
+- Use the Recast logo from assets and simplify English and Turkish interface copy.
+- Add compatible target-format shortcuts and a link from recent conversions to history.
+
+### Fixed
+
+- Prevent clearing the conversion queue while jobs are active.
+- Improve muted-text contrast in dark mode and respect reduced-motion preferences.
+
 ## [0.2.4] - 2026-10-11
 
 ### Added

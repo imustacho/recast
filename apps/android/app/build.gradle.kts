@@ -11,8 +11,8 @@ android {
         applicationId = "io.github.imustacho.recast"
         minSdk = 24
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.2.4"
+        versionCode = 5
+        versionName = "3.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -8,7 +8,7 @@ import { useAppStore } from "../lib/store";
 
 export function DesktopRecentPanel() {
   const { t, i18n } = useTranslation();
-  const { recentFiles, clearRecentFiles } = useAppStore();
+  const { recentFiles, setActiveTab } = useAppStore();
   const [openError, setOpenError] = useState<string>();
 
   async function handleOpenFile(path: string) {
@@ -21,22 +21,14 @@ export function DesktopRecentPanel() {
   }
 
   return (
-    <div className="rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-5 shadow-sm transition">
+    <div className="surface-card rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 p-5 shadow-sm transition">
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-slate-500 dark:text-slate-400" />
           <h3 className="text-sm font-bold text-slate-800 dark:text-white">{t("recent")}</h3>
         </div>
-        {recentFiles.length > 0 && (
-          <button
-            type="button"
-            onClick={clearRecentFiles}
-            className="text-xs font-semibold text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition"
-          >
-            {t("clear")}
-          </button>
-        )}
+        <button type="button" onClick={() => setActiveTab("history")} className="flex items-center gap-1 text-xs font-medium text-accent dark:text-emerald-300">{t("viewAll")}<ChevronRight className="h-3 w-3" /></button>
       </div>
 
       {openError && (
@@ -57,10 +49,10 @@ export function DesktopRecentPanel() {
               .join(" • ");
 
             return (
-              <div
+              <button type="button"
                 key={item.id}
                 onClick={() => void handleOpenFile(item.outputPath || item.inputPath)}
-                className="group flex cursor-pointer items-center justify-between rounded-2xl border border-slate-100 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-800/50 p-3 hover:border-slate-200 dark:hover:border-slate-600 hover:bg-slate-100/70 dark:hover:bg-slate-700/50 transition"
+                className="group flex w-full text-left items-center justify-between rounded-2xl border border-slate-100 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-800/50 p-3 hover:border-slate-200 dark:hover:border-slate-600 hover:bg-slate-100/70 dark:hover:bg-slate-700/50 transition"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <FormatIcon format={item.targetFormat} category={item.category} size="sm" />
@@ -78,7 +70,7 @@ export function DesktopRecentPanel() {
                   </span>
                   <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition" />
                 </div>
-              </div>
+              </button>
             );
           })
         )}

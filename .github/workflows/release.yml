@@ -78,9 +78,9 @@ jobs:
           releaseBody: |
             Install Recast using the package for your operating system and architecture.
 
-            This release expands the FFmpeg-backed image, audio, and video format catalogue, adds video-to-audio extraction, and drives the desktop format selector from centralized capabilities.
+            This release refreshes the interface with mint and teal colors, simpler cards, the Recast logo, and clearer English and Turkish text. The desktop top bar has been removed, mobile navigation now includes Settings, and active conversion jobs can no longer be cleared from the queue.
 
-            See the README for the complete supported format and default codec matrix.
+            See CHANGELOG.md for the full list of changes.
 
             Linux builds currently inherit a medium-severity glib 0.18 advisory through Tauri's GTK dependency chain. Avoid processing untrusted inputs on Linux until the upstream dependency is updated.
           releaseDraft: false

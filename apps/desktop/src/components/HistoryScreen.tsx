@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, ChevronRight, MoreVertical, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, Trash2 } from "lucide-react";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { FormatIcon } from "./FormatIcon";
 import { formatTimeAgo, getBasename } from "../lib/formatUtils";
@@ -27,7 +27,7 @@ export function HistoryScreen({ items, onClearList, onBack }: HistoryScreenProps
   }
 
   return (
-    <div className="flex h-full min-h-[500px] w-full flex-col justify-between rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-6 shadow-sm transition">
+    <div className="flex h-full min-h-[500px] w-full flex-col justify-between surface-card rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 p-6 shadow-sm transition">
       {/* Top Header */}
       <div>
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -45,13 +45,7 @@ export function HistoryScreen({ items, onClearList, onBack }: HistoryScreenProps
             <h2 className="text-base font-bold text-slate-900 dark:text-white">{t("convertedFiles")}</h2>
           </div>
 
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-            aria-label="More"
-          >
-            <MoreVertical className="h-4 w-4" />
-          </button>
+          <span className="rounded-full bg-slate-50 px-3 py-1 text-xs text-slate-500 dark:bg-slate-900">{items.length} {t("files")}</span>
         </div>
 
         {openError && (

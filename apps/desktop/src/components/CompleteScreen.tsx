@@ -37,7 +37,7 @@ export function CompleteScreen({
   }
 
   return (
-    <div className="flex h-full min-h-[500px] w-full flex-col justify-between rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-6 shadow-sm transition">
+    <div className="flex h-full min-h-[500px] w-full flex-col justify-between surface-card rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 p-6 shadow-sm transition">
       <div className="my-auto flex flex-col items-center text-center">
         {/* Celebration Badge with particle dots */}
         <div className="relative mb-5 flex h-24 w-24 items-center justify-center">
@@ -112,7 +112,7 @@ export function CompleteScreen({
         <button
           type="button"
           onClick={() => void handleViewFiles()}
-          className="w-full rounded-full bg-emerald-700 dark:bg-emerald-600 py-3 text-sm font-bold text-white shadow-md shadow-emerald-700/20 hover:bg-emerald-800 dark:hover:bg-emerald-500 transition active:scale-[0.98]"
+          className="w-full rounded-xl bg-emerald-700 dark:bg-emerald-600 py-3 text-sm font-bold text-white shadow-md shadow-emerald-700/20 hover:bg-emerald-800 dark:hover:bg-emerald-500 transition active:scale-[0.98]"
         >
           {t("viewFiles")}
         </button>

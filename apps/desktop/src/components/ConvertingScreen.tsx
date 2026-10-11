@@ -27,7 +27,7 @@ export function ConvertingScreen({
   const strokeDashoffset = circumference - (overallProgress / 100) * circumference;
 
   return (
-    <div className="flex h-full min-h-[500px] w-full flex-col justify-between rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-6 shadow-sm transition">
+    <div className="flex h-full min-h-[500px] w-full flex-col justify-between surface-card rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 p-6 shadow-sm transition">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
         {onCancel && (

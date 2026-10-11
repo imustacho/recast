@@ -1,64 +1,25 @@
 import { useTranslation } from "react-i18next";
-import { Clock, Home, Settings } from "lucide-react";
-import recastLogo from "../assets/recast.png?inline";
-
+import { Clock, Home, Settings, ShieldCheck } from "lucide-react";
+import { Brand } from "./Brand";
 interface DesktopSidebarProps {
   activeTab: "home" | "history" | "settings";
   onSelectTab: (tab: "home" | "history" | "settings") => void;
 }
-
 export function DesktopSidebar({ activeTab, onSelectTab }: DesktopSidebarProps) {
   const { t } = useTranslation();
-
-  const navItems = [
+  const items = [
     { id: "home" as const, label: t("home"), icon: Home },
     { id: "history" as const, label: t("history"), icon: Clock },
     { id: "settings" as const, label: t("settings"), icon: Settings },
   ];
-
-  return (
-    <aside className="hidden lg:flex w-60 shrink-0 flex-col justify-between py-2 pr-6">
-      <div className="space-y-8">
-        {/* Logo and Brand */}
-        <div className="flex items-center gap-3 px-2">
-          <img src={recastLogo} alt="Recast logo" className="h-10 w-10 object-contain drop-shadow-xs" />
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Recast</h1>
-            <p className="text-[11px] text-slate-400 dark:text-slate-400 font-medium">{t("appSubtitle")}</p>
-          </div>
-        </div>
-
-        {/* Navigation list */}
-        <nav className="space-y-1.5" aria-label="Main Navigation">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onSelectTab(item.id)}
-                className={`flex w-full items-center gap-3.5 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                  isActive
-                    ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 shadow-xs border border-transparent dark:border-emerald-800/40"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100"
-                }`}
-              >
-                <Icon className={`h-5 w-5 ${isActive ? "text-emerald-700 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}`} />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-
-      {/* Sidebar Footer Tagline */}
-      <div className="px-3 pb-4">
-        <p className="text-xs leading-relaxed text-slate-400 dark:text-slate-500 font-medium">
-          {t("tagline")}
-        </p>
-      </div>
-    </aside>
-  );
+  return <header className="desktop-header">
+    <Brand />
+    <nav className="flex items-center gap-1 rounded-2xl bg-slate-50 p-1.5 dark:bg-slate-800" aria-label="Main Navigation">
+      {items.map(({ id, label, icon: Icon }) => <button key={id} type="button" onClick={() => onSelectTab(id)} aria-current={activeTab === id ? "page" : undefined}
+        className={"flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition " + (activeTab === id ? "bg-accentSoft text-accent dark:bg-emerald-950 dark:text-emerald-300" : "text-slate-500 hover:bg-white dark:hover:bg-slate-700")}>
+        <Icon className="h-4 w-4" /><span>{label}</span>
+      </button>)}
+    </nav>
+    <span className="flex items-center justify-end gap-2 text-xs text-slate-500"><ShieldCheck className="h-4 w-4 text-accent" />{t("offlineReady")}</span>
+  </header>;
 }

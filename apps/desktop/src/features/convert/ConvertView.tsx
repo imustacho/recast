@@ -11,12 +11,16 @@ import {
   FolderOpen,
   RefreshCw,
   UploadCloud,
+  ShieldCheck,
+  ArrowUpRight,
+  Settings,
 } from "lucide-react";
 import { availableTargetFormats } from "../../lib/capabilities";
 import { FALLBACK_CAPABILITIES, getFormatMeta } from "../../lib/formatMeta";
 import { getBasename } from "../../lib/formatUtils";
 import { useAppStore } from "../../lib/store";
 import { FormatIcon } from "../../components/FormatIcon";
+import { Brand } from "../../components/Brand";
 import { QuickFormatsBar } from "../../components/QuickFormatsBar";
 import { TargetFormatModal } from "../../components/TargetFormatModal";
 import { SelectFilesModal } from "../../components/SelectFilesModal";
@@ -431,7 +435,7 @@ export function ConvertView() {
   }
 
   return (
-    <section className="flex min-w-0 flex-1 flex-col gap-6" id="convert">
+    <section className="convert-view flex min-w-0 flex-1 flex-col gap-5" id="convert">
       {/* Hidden file input for fallback */}
       <input
         ref={fileInputRef}
@@ -442,9 +446,15 @@ export function ConvertView() {
       />
 
       {/* Welcome Heading (Desktop View) */}
-      <div className="hidden lg:block space-y-1">
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{t("welcomeBack")}</h2>
-        <p className="text-sm text-slate-400 dark:text-slate-400">{t("welcomeSubtitle")}</p>
+      <div className="converter-heading">
+        <div><div className="mb-5 hidden lg:block"><Brand /></div><h2 className="hidden text-2xl font-bold tracking-tight lg:block">{t("welcomeBack")}</h2>
+        <h2 className="text-[28px] font-bold tracking-tight lg:hidden">{t("mobileConvertTitle")}</h2>
+        <p className="mt-2 hidden text-sm text-slate-500 lg:block">{t("welcomeSubtitle")}</p>
+        <p className="mt-2 text-sm text-slate-500 lg:hidden">{t("mobileConvertSubtitle")}</p></div>
+        <div className="hidden items-center gap-3 lg:flex">
+          <span className="offline-badge"><ShieldCheck className="h-3.5 w-3.5" />{t("offlineReady")}</span>
+          <button type="button" onClick={() => useAppStore.getState().setActiveTab("settings")} aria-label={t("settings")} className="rounded-xl p-2.5 text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800"><Settings className="h-5 w-5" /></button>
+        </div>
       </div>
 
       {/* Large Drop Zone Card */}
@@ -455,14 +465,14 @@ export function ConvertView() {
         }}
         onDragLeave={() => setIsDraggingOver(false)}
         onDrop={handleHtmlDrop}
-        className={`relative flex min-h-[220px] sm:min-h-[260px] flex-col items-center justify-center rounded-3xl border-2 border-dashed p-6 sm:p-10 text-center transition ${
+        className={`drop-zone relative flex min-h-[240px] sm:min-h-[280px] flex-col items-center justify-center rounded-3xl border border-transparent p-6 sm:p-10 text-center transition ${
           isDraggingOver
             ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/40 scale-[1.005]"
-            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1E293B]/70 hover:border-slate-300 dark:hover:border-slate-600"
+            : "border-transparent bg-accentSoft dark:bg-emerald-950/60 hover:border-emerald-300 dark:hover:border-emerald-700"
         }`}
       >
-        <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl text-slate-700 dark:text-slate-200">
-          <UploadCloud className="h-12 w-12 stroke-[1.6]" />
+        <div className="mb-3 flex h-12 w-12 items-center justify-center text-accent dark:text-emerald-300">
+          <UploadCloud className="h-9 w-9 stroke-[1.6]" />
         </div>
 
         <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">{t("dropFilesHere")}</p>
@@ -472,7 +482,7 @@ export function ConvertView() {
           type="button"
           disabled={isConverting}
           onClick={() => void handleSelectFiles()}
-          className="mt-4 flex items-center gap-2 rounded-full bg-emerald-700 dark:bg-emerald-600 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-emerald-700/20 hover:bg-emerald-800 dark:hover:bg-emerald-500 transition active:scale-95 disabled:opacity-50"
+          className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-emerald-700 dark:bg-emerald-600 min-w-44 px-6 py-3.5 text-sm font-semibold text-white shadow-md shadow-emerald-700/20 hover:bg-emerald-800 dark:hover:bg-emerald-500 transition active:scale-95 disabled:opacity-50"
         >
           <FolderOpen className="h-4 w-4" />
           <span>{t("selectFiles")}</span>
@@ -482,12 +492,16 @@ export function ConvertView() {
       </div>
 
       {/* Target Format and Selected Files Cards Row */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="conversion-options grid gap-4 md:grid-cols-[1.2fr_1fr]">
         {/* Target Format Card */}
-        <div className="rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-4 sm:p-5 shadow-sm transition">
-          <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-400">
-            {t("targetFormat")}
-          </span>
+        <div className="surface-card rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 p-4 sm:p-5 shadow-sm transition">
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold">{t("targetFormat")}</h3>
+            <button type="button" onClick={() => setIsFormatModalOpen(true)} className="flex items-center gap-1 text-[11px] text-accent dark:text-emerald-300">{t("allFormats")}<ArrowUpRight className="h-3 w-3" /></button>
+          </div>
+          <div className="mb-3 grid grid-cols-4 gap-2">
+            {[...new Set([...["jpg", "png", "webp", "pdf"].filter((format) => availableFormats.includes(format)), ...availableFormats])].slice(0, 4).map((format) => <button type="button" key={format} aria-pressed={targetFormat === format} onClick={() => setTargetFormat(format)} className={"rounded-xl py-2.5 text-xs font-semibold uppercase transition " + (targetFormat === format ? "bg-accent text-white" : "bg-slate-50 text-slate-500 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-300")}>{format}</button>)}
+          </div>
 
           <button
             type="button"
@@ -508,9 +522,9 @@ export function ConvertView() {
         </div>
 
         {/* Selected Files Card */}
-        <div className="rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-4 sm:p-5 shadow-sm transition">
+        <div className="surface-card rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 p-4 sm:p-5 shadow-sm transition">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
               {t("selectedFiles")} ({files.length})
             </span>
             {files.length > 0 && (
@@ -526,17 +540,17 @@ export function ConvertView() {
           </div>
 
           {files.length === 0 ? (
-            <div
+            <button
               onClick={() => void handleSelectFiles()}
-              className="flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 p-3 text-slate-400 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100/60 dark:hover:bg-slate-700/60 transition"
+              type="button" className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 p-3 text-slate-400 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100/60 dark:hover:bg-slate-700/60 transition"
             >
               <FileText className="h-5 w-5 text-slate-400" />
               <span className="text-xs">{t("noFiles")}</span>
-            </div>
+            </button>
           ) : (
-            <div
+            <button type="button"
               onClick={() => setIsFilesModalOpen(true)}
-              className="flex cursor-pointer items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 p-3 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100/60 dark:hover:bg-slate-700/60 transition"
+              className="flex w-full items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 p-3 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100/60 dark:hover:bg-slate-700/60 transition"
             >
               <div className="flex min-w-0 flex-1 items-center gap-2.5">
                 <FormatIcon
@@ -557,21 +571,22 @@ export function ConvertView() {
               <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:underline">
                 {t("files")} &gt;
               </span>
-            </div>
+            </button>
           )}
         </div>
       </div>
 
       {/* Convert Now Action Button */}
-      <div>
+      <div className="convert-action">
+        <p className="text-xs text-slate-500">{files.length ? t("conversionPrivacy") : t("selectedFilesHint")}</p>
         <button
           type="button"
           disabled={!files.length || isConverting || !availableFormats.length}
           onClick={() => void runConversion(files, targetFormat)}
-          className={`flex w-full items-center justify-center gap-2 rounded-full py-4 text-sm font-bold shadow-md transition active:scale-[0.99] disabled:cursor-not-allowed ${
+          className={`flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold transition active:scale-[0.99] disabled:cursor-not-allowed ${
             !files.length || isConverting || !availableFormats.length
               ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 shadow-none"
-              : "bg-slate-900 dark:bg-emerald-600 text-white hover:bg-slate-800 dark:hover:bg-emerald-500 shadow-slate-900/20 dark:shadow-emerald-950/40"
+              : "bg-accent dark:bg-emerald-600 text-white hover:bg-emerald-800 dark:hover:bg-emerald-500 shadow-slate-900/20 dark:shadow-emerald-950/40"
           }`}
         >
           <RefreshCw className={`h-4 w-4 ${isConverting ? "animate-spin" : ""}`} />

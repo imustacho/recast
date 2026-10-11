@@ -16,7 +16,7 @@ export function QueueView() {
 
   return (
     <section
-      className="min-w-0 rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-5 shadow-sm transition"
+      className="min-w-0 surface-card rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 p-5 shadow-sm transition"
       id="queue"
     >
       {/* Header */}
@@ -32,17 +32,13 @@ export function QueueView() {
           </span>
         </div>
 
-        <div
-          onClick={() => {
-            if (jobs.length > 0) {
-              useAppStore.setState({ jobs: [] });
-            }
-          }}
-          className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 transition"
+        <button type="button" disabled={!jobs.length || activeCount > 0} aria-label={t("clearAll")}
+          onClick={() => useAppStore.setState({ jobs: [] })}
+          className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg disabled:cursor-not-allowed disabled:opacity-40 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 transition"
           title={t("clearAll")}
         >
           <Trash2 className="h-3.5 w-3.5" />
-        </div>
+        </button>
       </div>
 
       {openError && (

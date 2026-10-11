@@ -67,7 +67,7 @@ export function SelectFilesModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 dark:bg-black/70 p-3 sm:p-4 backdrop-blur-sm animate-fade-in">
-      <div className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[#1E293B] shadow-2xl transition">
+      <div className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden surface-card rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 shadow-2xl transition">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-5 py-4">
           <div className="flex items-center gap-3">
@@ -186,7 +186,7 @@ export function SelectFilesModal({
           <button
             type="button"
             onClick={handleAdd}
-            className="flex-1 rounded-full bg-emerald-700 dark:bg-emerald-600 py-2.5 text-sm font-bold text-white shadow-md shadow-emerald-700/20 hover:bg-emerald-800 dark:hover:bg-emerald-500 transition"
+            className="flex-1 rounded-xl bg-emerald-700 dark:bg-emerald-600 py-2.5 text-sm font-bold text-white shadow-md shadow-emerald-700/20 hover:bg-emerald-800 dark:hover:bg-emerald-500 transition"
           >
             {t("confirm")} ({selectedPaths.size})
           </button>

@@ -43,8 +43,8 @@ export function QuickFormatsBar({
   }, [availableFormats]);
 
   return (
-    <div className="rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-5 shadow-sm transition">
-      <div className="mb-3">
+    <div className="surface-card rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 p-5 transition">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-1">
         <h3 className="text-sm font-bold text-slate-800 dark:text-white">{t("quickFormats")}</h3>
         <p className="text-xs text-slate-400 dark:text-slate-400">{t("quickFormatsDesc")}</p>
       </div>
@@ -60,10 +60,11 @@ export function QuickFormatsBar({
               type="button"
               disabled={disabled}
               onClick={() => onSelectFormat(item.id)}
+              aria-pressed={isSelected}
               className={`group flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-2.5 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${
                 isSelected
-                  ? "border-emerald-500 dark:border-emerald-500/80 bg-emerald-50/70 dark:bg-emerald-950/60 shadow-sm ring-2 ring-emerald-500/20"
-                  : "border-slate-100 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-800/60 hover:border-slate-200 dark:hover:border-slate-600 hover:bg-slate-100/60 dark:hover:bg-slate-700/60"
+                  ? "border-transparent dark:border-emerald-500/80 bg-emerald-50/70 dark:bg-emerald-950/60 shadow-sm "
+                  : "border-transparent dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-800/60 hover:border-slate-200 dark:hover:border-slate-600 hover:bg-slate-100/60 dark:hover:bg-slate-700/60"
               }`}
             >
               <FormatIcon format={item.id} category={item.category} size="sm" />
