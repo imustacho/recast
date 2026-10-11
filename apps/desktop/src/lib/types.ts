@@ -77,7 +77,7 @@ export interface RecentConversionItem {
   error?: string;
 }
 
-export type SupportedLanguage = "en" | "tr" | "de" | "es" | "fr" | "it" | "ru";
+export type SupportedLanguage = "en" | "tr" | "de" | "es" | "fr" | "it" | "ru" | "zh" | "ja" | "ko";
 
 export interface AppSettings {
   theme: "system" | "light" | "dark";

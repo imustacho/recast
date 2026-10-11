@@ -7,9 +7,12 @@ import esCommon from "../locales/es/common.json";
 import frCommon from "../locales/fr/common.json";
 import itCommon from "../locales/it/common.json";
 import ruCommon from "../locales/ru/common.json";
+import zhCommon from "../locales/zh/common.json";
+import jaCommon from "../locales/ja/common.json";
+import koCommon from "../locales/ko/common.json";
 import type { SupportedLanguage } from "./types";
 
-const SUPPORTED_LANGUAGES: SupportedLanguage[] = ["en", "tr", "de", "es", "fr", "it", "ru"];
+const SUPPORTED_LANGUAGES: SupportedLanguage[] = ["en", "tr", "de", "es", "fr", "it", "ru", "zh", "ja", "ko"];
 
 function getInitialLanguage(): SupportedLanguage {
   try {
@@ -36,6 +39,9 @@ void i18n.use(initReactI18next).init({
     fr: { translation: frCommon },
     it: { translation: itCommon },
     ru: { translation: ruCommon },
+    zh: { translation: zhCommon },
+    ja: { translation: jaCommon },
+    ko: { translation: koCommon },
   },
   interpolation: {
     escapeValue: false,

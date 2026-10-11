@@ -6,6 +6,14 @@ All notable changes to Recast are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-10-11
+
+### Added
+
+- Add Simplified Chinese (`zh`), Japanese (`ja`), and Korean (`ko`) translations.
+- Declare Chinese, Japanese, and Korean in Windows MSIX manifest and NSIS installer configuration.
+- Support relative time localization and language switcher options for Chinese, Japanese, and Korean.
+
 ## [0.2.2] - 2026-09-04
 
 ### Added

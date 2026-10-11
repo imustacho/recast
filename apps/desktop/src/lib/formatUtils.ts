@@ -10,6 +10,9 @@ export function formatTimeAgo(timestamp: number, lang: string = "en"): string {
       case "fr": return "À l'instant";
       case "it": return "Proprio ora";
       case "ru": return "Только что";
+      case "zh": return "刚刚";
+      case "ja": return "たった今";
+      case "ko": return "방금 전";
       default: return "Just now";
     }
   }
@@ -19,6 +22,9 @@ export function formatTimeAgo(timestamp: number, lang: string = "en"): string {
     switch (code) {
       case "tr": return `${diffMin}dk önce`;
       case "ru": return `${diffMin}м назад`;
+      case "zh": return `${diffMin}分钟前`;
+      case "ja": return `${diffMin}分前`;
+      case "ko": return `${diffMin}분 전`;
       default: return `${diffMin}m ago`;
     }
   }
@@ -28,6 +34,9 @@ export function formatTimeAgo(timestamp: number, lang: string = "en"): string {
     switch (code) {
       case "tr": return `${diffHours}sa önce`;
       case "ru": return `${diffHours}ч назад`;
+      case "zh": return `${diffHours}小时前`;
+      case "ja": return `${diffHours}時間前`;
+      case "ko": return `${diffHours}시간 전`;
       default: return `${diffHours}h ago`;
     }
   }
@@ -41,6 +50,9 @@ export function formatTimeAgo(timestamp: number, lang: string = "en"): string {
       case "fr": return "Hier";
       case "it": return "Ieri";
       case "ru": return "Вчера";
+      case "zh": return "昨天";
+      case "ja": return "昨日";
+      case "ko": return "어제";
       default: return "Yesterday";
     }
   }
@@ -49,6 +61,9 @@ export function formatTimeAgo(timestamp: number, lang: string = "en"): string {
     switch (code) {
       case "tr": return `${diffDays} gün önce`;
       case "ru": return `${diffDays}д назад`;
+      case "zh": return `${diffDays}天前`;
+      case "ja": return `${diffDays}日前`;
+      case "ko": return `${diffDays}일 전`;
       default: return `${diffDays}d ago`;
     }
   }
@@ -61,6 +76,9 @@ export function formatTimeAgo(timestamp: number, lang: string = "en"): string {
     fr: "fr-FR",
     it: "it-IT",
     ru: "ru-RU",
+    zh: "zh-CN",
+    ja: "ja-JP",
+    ko: "ko-KR",
     en: "en-US",
   };
   return date.toLocaleDateString(localeMap[code] || "en-US", {

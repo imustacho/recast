@@ -17,6 +17,9 @@ const LANGUAGES: { code: SupportedLanguage; label: string; flag: string }[] = [
   { code: "fr", label: "Français", flag: "🇫🇷" },
   { code: "it", label: "Italiano", flag: "🇮🇹" },
   { code: "ru", label: "Русский", flag: "🇷🇺" },
+  { code: "zh", label: "中文", flag: "🇨🇳" },
+  { code: "ja", label: "日本語", flag: "🇯🇵" },
+  { code: "ko", label: "한국어", flag: "🇰🇷" },
 ];
 
 export function SettingsScreen({ onBack }: SettingsScreenProps) {
@@ -218,7 +221,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
           <div className="overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-800/40">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 p-3.5">
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("version")}</span>
-              <span className="font-mono text-xs text-slate-400 dark:text-slate-500">0.2.3</span>
+              <span className="font-mono text-xs text-slate-400 dark:text-slate-500">0.2.4</span>
             </div>
             <div className="flex items-center justify-between p-3.5">
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("license")}</span>

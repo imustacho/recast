@@ -24,6 +24,9 @@ describe("Format Utilities", () => {
     expect(formatTimeAgo(now - 10000, "fr")).toBe("À l'instant");
     expect(formatTimeAgo(now - 10000, "it")).toBe("Proprio ora");
     expect(formatTimeAgo(now - 10000, "ru")).toBe("Только что");
+    expect(formatTimeAgo(now - 10000, "zh")).toBe("刚刚");
+    expect(formatTimeAgo(now - 10000, "ja")).toBe("たった今");
+    expect(formatTimeAgo(now - 10000, "ko")).toBe("방금 전");
 
     expect(formatTimeAgo(now - 120000, "en")).toBe("2m ago");
     expect(formatTimeAgo(now - 120000, "tr")).toBe("2dk önce");
@@ -196,6 +199,9 @@ describe("SettingsScreen", () => {
     expect(screen.getByText("Français")).toBeInTheDocument();
     expect(screen.getByText("Italiano")).toBeInTheDocument();
     expect(screen.getByText("Русский")).toBeInTheDocument();
+    expect(screen.getByText("中文")).toBeInTheDocument();
+    expect(screen.getByText("日本語")).toBeInTheDocument();
+    expect(screen.getByText("한국어")).toBeInTheDocument();
 
     fireEvent.click(screen.getByText("Deutsch"));
     expect(useAppStore.getState().settings.language).toBe("de");

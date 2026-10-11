@@ -33,7 +33,7 @@ interface AppState {
 
 const RECENT_STORAGE_KEY = "recast_recent_conversions";
 const SETTINGS_STORAGE_KEY = "recast_app_settings";
-const SUPPORTED_LANGUAGES: SupportedLanguage[] = ["en", "tr", "de", "es", "fr", "it", "ru"];
+const SUPPORTED_LANGUAGES: SupportedLanguage[] = ["en", "tr", "de", "es", "fr", "it", "ru", "zh", "ja", "ko"];
 
 function loadStoredRecent(): RecentConversionItem[] {
   try {
