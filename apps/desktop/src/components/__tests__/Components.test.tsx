@@ -66,6 +66,25 @@ describe("QuickFormatsBar", () => {
     fireEvent.click(screen.getByText("PNG"));
     expect(onSelect).toHaveBeenCalledWith("png");
   });
+
+  it("dynamically shows compatible spreadsheet targets when availableFormats provided", () => {
+    const onSelect = vi.fn();
+    render(
+      <QuickFormatsBar
+        currentTarget="pdf"
+        onSelectFormat={onSelect}
+        availableFormats={["pdf", "csv", "ods", "html"]}
+      />,
+    );
+
+    expect(screen.getByText("PDF")).toBeInTheDocument();
+    expect(screen.getByText("CSV")).toBeInTheDocument();
+    expect(screen.getByText("ODS")).toBeInTheDocument();
+    expect(screen.getByText("HTML")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("CSV"));
+    expect(onSelect).toHaveBeenCalledWith("csv");
+  });
 });
 
 describe("TargetFormatModal", () => {
@@ -86,6 +105,29 @@ describe("TargetFormatModal", () => {
 
     expect(screen.getByText("MP4")).toBeInTheDocument();
     expect(screen.queryByText("JPG / JPEG")).not.toBeInTheDocument();
+  });
+
+  it("renders rich spreadsheet formats when allowedFormats are provided for xlsx", () => {
+    const onSelect = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <TargetFormatModal
+        isOpen={true}
+        onClose={onClose}
+        selectedFormat="pdf"
+        onSelectFormat={onSelect}
+        allowedFormats={["pdf", "csv", "ods", "xls"]}
+      />,
+    );
+
+    expect(screen.getByText("CSV")).toBeInTheDocument();
+    expect(screen.getByText("ODS")).toBeInTheDocument();
+    expect(screen.getByText("PDF")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("CSV"));
+    fireEvent.click(screen.getByRole("button", { name: /confirm/i }));
+    expect(onSelect).toHaveBeenCalledWith("csv");
+    expect(onClose).toHaveBeenCalled();
   });
 });
 

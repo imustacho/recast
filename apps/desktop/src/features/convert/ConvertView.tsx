@@ -583,6 +583,7 @@ export function ConvertView() {
       <QuickFormatsBar
         currentTarget={targetFormat}
         onSelectFormat={(fmt) => setTargetFormat(fmt)}
+        availableFormats={files.length > 0 ? availableFormats : undefined}
         disabled={isConverting}
       />
 

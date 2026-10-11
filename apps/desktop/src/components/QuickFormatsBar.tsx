@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { QUICK_FORMATS, getFormatMeta } from "../lib/formatMeta";
 import { FormatIcon } from "./FormatIcon";
@@ -5,15 +6,41 @@ import { FormatIcon } from "./FormatIcon";
 interface QuickFormatsBarProps {
   currentTarget: string;
   onSelectFormat: (format: string) => void;
+  availableFormats?: string[];
   disabled?: boolean;
 }
+
+const POPULAR_FORMAT_ORDER = [
+  "pdf", "docx", "csv", "xlsx", "ods", "txt", "md", "html",
+  "jpg", "png", "webp", "gif", "bmp", "tiff", "avif",
+  "mp4", "mkv", "webm", "mov", "avi",
+  "mp3", "wav", "flac", "m4a", "aac", "ogg", "opus",
+];
 
 export function QuickFormatsBar({
   currentTarget,
   onSelectFormat,
+  availableFormats,
   disabled = false,
 }: QuickFormatsBarProps) {
   const { t } = useTranslation();
+
+  const displayedFormats = useMemo(() => {
+    if (availableFormats && availableFormats.length > 0) {
+      const allowedSet = new Set(availableFormats.map((f) => f.toLowerCase().replace(/^\./, "")));
+      const prioritized = POPULAR_FORMAT_ORDER.filter((f) => allowedSet.has(f));
+      const remaining = availableFormats
+        .map((f) => f.toLowerCase().replace(/^\./, ""))
+        .filter((f) => !prioritized.includes(f));
+      const combined = [...prioritized, ...remaining].slice(0, 8);
+      return combined.map((id) => {
+        const meta = getFormatMeta(id);
+        return { id: meta.id, label: meta.id.toUpperCase(), category: meta.category };
+      });
+    }
+
+    return QUICK_FORMATS;
+  }, [availableFormats]);
 
   return (
     <div className="rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-5 shadow-sm transition">
@@ -23,7 +50,7 @@ export function QuickFormatsBar({
       </div>
 
       <div className="grid grid-cols-4 sm:grid-cols-8 gap-2.5">
-        {QUICK_FORMATS.map((item) => {
+        {displayedFormats.map((item) => {
           const isSelected = currentTarget.toLowerCase() === item.id.toLowerCase();
           const meta = getFormatMeta(item.id);
 

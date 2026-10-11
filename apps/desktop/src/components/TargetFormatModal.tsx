@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Check, Search, X } from "lucide-react";
-import { FORMAT_META_MAP } from "../lib/formatMeta";
+import { FORMAT_META_MAP, getFormatMeta, type FormatMeta } from "../lib/formatMeta";
 import { FormatIcon } from "./FormatIcon";
 import type { MediaCategory } from "../lib/types";
 
@@ -34,13 +34,17 @@ export function TargetFormatModal({
   ];
 
   const formatList = useMemo(() => {
-    let list = Object.values(FORMAT_META_MAP).filter(
-      (item, idx, self) => self.findIndex((i) => i.id === item.id) === idx,
-    );
+    let list: FormatMeta[];
 
     if (allowedFormats && allowedFormats.length > 0) {
-      const allowedSet = new Set(allowedFormats.map((f) => f.toLowerCase().replace(/^\./, "")));
-      list = list.filter((item) => allowedSet.has(item.id.toLowerCase()));
+      const uniqueAllowed = Array.from(
+        new Set(allowedFormats.map((f) => f.toLowerCase().replace(/^\./, ""))),
+      );
+      list = uniqueAllowed.map((fmt) => getFormatMeta(fmt));
+    } else {
+      list = Object.values(FORMAT_META_MAP).filter(
+        (item, idx, self) => self.findIndex((i) => i.id === item.id) === idx,
+      );
     }
 
     if (activeCategory !== "all") {
