@@ -99,5 +99,6 @@
   "allFormats": "Tüm formatlar",
   "selectedFilesHint": "Dönüştürmek için dosyalarını ekle.",
   "viewAll": "Tümü",
-  "conversionPrivacy": "Dosyaların cihazında işlenir."
+  "conversionPrivacy": "Dosyaların cihazında işlenir.",
+  "formatPlaceholder": "Çevirebileceğin formatları görmek için dosya ekle."
 }

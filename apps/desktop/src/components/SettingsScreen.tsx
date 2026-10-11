@@ -221,7 +221,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
           <div className="overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-800/40">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 p-3.5">
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("version")}</span>
-              <span className="font-mono text-xs text-slate-400 dark:text-slate-500">3.0.0</span>
+              <span className="font-mono text-xs text-slate-400 dark:text-slate-500">3.0.1</span>
             </div>
             <div className="flex items-center justify-between p-3.5">
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("license")}</span>

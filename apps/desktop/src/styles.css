@@ -25,7 +25,8 @@
   --accent: #83d3be;
   --muted: #a2b8af;
 }
-body { margin: 0; min-width: 320px; }
+html, body { width: 100%; max-width: 100%; overflow-x: clip; }
+body { margin: 0; min-width: 0; }
 #root { min-height: 100dvh; width: 100%; }
 button, input, select { font: inherit; }
 button { touch-action: manipulation; }
@@ -39,7 +40,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, [tabindex]:focu
 .converter-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 26px; }
 .offline-badge { display: none; }
 .activity-panel { display: flex; min-width: 0; flex-direction: column; gap: 20px; padding-top: 170px; }
-.surface-card { border-color: transparent; box-shadow: none; }
+.surface-card { min-width: 0; max-width: 100%; border-color: transparent; box-shadow: none; }
 .batch-tip { padding: 22px; border-radius: 24px; background: var(--mint); color: var(--accent); }
 .batch-tip h3 { margin: 0 0 10px; font-size: 13px; font-weight: 650; }
 .batch-tip p { margin: 0; font-size: 12px; line-height: 1.7; }

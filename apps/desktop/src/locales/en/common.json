@@ -99,5 +99,6 @@
   "allFormats": "All formats",
   "selectedFilesHint": "Add your files to get started.",
   "viewAll": "View all",
-  "conversionPrivacy": "Your files are processed on your device."
+  "conversionPrivacy": "Your files are processed on your device.",
+  "formatPlaceholder": "Add a file to see available output formats."
 }

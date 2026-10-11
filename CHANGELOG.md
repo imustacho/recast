@@ -6,6 +6,14 @@ All notable changes to Recast are documented here. The format follows
 
 ## [Unreleased]
 
+## [3.0.1] - 2026-10-11
+
+### Fixed
+
+- Prevent horizontal overflow on mobile when selecting files with long names.
+- Show compatible output formats for the selected files and update them when the selection changes.
+- Replace the format picker with a small placeholder until files are selected.
+- Attach the Android release APK to the GitHub Release.
 ## [3.0.0] - 2026-10-11
 
 ### Changed

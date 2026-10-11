@@ -78,7 +78,7 @@ jobs:
           releaseBody: |
             Install Recast using the package for your operating system and architecture.
 
-            This release refreshes the interface with mint and teal colors, simpler cards, the Recast logo, and clearer English and Turkish text. The desktop top bar has been removed, mobile navigation now includes Settings, and active conversion jobs can no longer be cleared from the queue.
+            Fix mobile horizontal overflow and show output formats based on the selected files. Before selecting a file, the format picker is replaced with a small placeholder. The Android release APK is included below.
 
             See CHANGELOG.md for the full list of changes.
 
@@ -122,18 +122,16 @@ jobs:
 
       - name: Build Android Release APK
         working-directory: apps/android
-        run: ./gradlew assembleRelease
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease
 
       - name: Upload APK to Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
         run: |
-          if [ -f apps/android/app/build/outputs/apk/release/app-release.apk ]; then
-            cp apps/android/app/build/outputs/apk/release/app-release.apk "recast-${RELEASE_TAG}.apk"
-          else
-            cp apps/android/app/build/outputs/apk/debug/app-debug.apk "recast-${RELEASE_TAG}.apk"
-          fi
+          cp apps/android/app/build/outputs/apk/release/app-release.apk "recast-${RELEASE_TAG}.apk"
           for i in $(seq 1 12); do
             if gh release upload "$RELEASE_TAG" "recast-${RELEASE_TAG}.apk" --repo "$GITHUB_REPOSITORY" --clobber; then
               echo "APK uploaded successfully."

@@ -36,7 +36,7 @@ export function TargetFormatModal({
   const formatList = useMemo(() => {
     let list: FormatMeta[];
 
-    if (allowedFormats && allowedFormats.length > 0) {
+    if (allowedFormats !== undefined) {
       const uniqueAllowed = Array.from(
         new Set(allowedFormats.map((f) => f.toLowerCase().replace(/^\./, ""))),
       );
@@ -177,6 +177,7 @@ export function TargetFormatModal({
           <button
             type="button"
             onClick={handleConfirm}
+            disabled={allowedFormats !== undefined && !allowedFormats.includes(tentativeSelection)}
             className="w-full rounded-xl bg-emerald-700 dark:bg-emerald-600 py-3 text-sm font-bold text-white shadow-md shadow-emerald-700/20 hover:bg-emerald-800 dark:hover:bg-emerald-500 transition active:scale-[0.98]"
           >
             {t("confirm")}

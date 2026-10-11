@@ -492,38 +492,45 @@ export function ConvertView() {
       </div>
 
       {/* Target Format and Selected Files Cards Row */}
-      <div className="conversion-options grid gap-4 md:grid-cols-[1.2fr_1fr]">
+      <div className="conversion-options grid min-w-0 gap-4 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+        {files.length === 0 ? (
+          <p className="col-span-full rounded-2xl border border-dashed border-slate-200 px-4 py-3 text-sm text-slate-500 dark:border-slate-700" role="status">
+            {t("formatPlaceholder")}
+          </p>
+        ) : <>
         {/* Target Format Card */}
         <div className="surface-card rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 p-4 sm:p-5 shadow-sm transition">
-          <div className="mb-4 flex items-center justify-between gap-2">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-semibold">{t("targetFormat")}</h3>
-            <button type="button" onClick={() => setIsFormatModalOpen(true)} className="flex items-center gap-1 text-[11px] text-accent dark:text-emerald-300">{t("allFormats")}<ArrowUpRight className="h-3 w-3" /></button>
+            <button type="button" disabled={!availableFormats.length} onClick={() => setIsFormatModalOpen(true)} className="flex items-center gap-1 text-[11px] text-accent dark:text-emerald-300">{t("allFormats")}<ArrowUpRight className="h-3 w-3" /></button>
           </div>
-          <div className="mb-3 grid grid-cols-4 gap-2">
-            {[...new Set([...["jpg", "png", "webp", "pdf"].filter((format) => availableFormats.includes(format)), ...availableFormats])].slice(0, 4).map((format) => <button type="button" key={format} aria-pressed={targetFormat === format} onClick={() => setTargetFormat(format)} className={"rounded-xl py-2.5 text-xs font-semibold uppercase transition " + (targetFormat === format ? "bg-accent text-white" : "bg-slate-50 text-slate-500 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-300")}>{format}</button>)}
+          {availableFormats.length > 0 ? <>
+          <div className="mb-3 grid min-w-0 grid-cols-3 gap-2 sm:grid-cols-4" role="group" aria-label={t("targetFormat")}>
+            {[...new Set(availableFormats)].map((format) => <button type="button" key={format} aria-pressed={targetFormat === format} onClick={() => setTargetFormat(format)} className={"min-w-0 break-all rounded-xl px-2 py-2.5 text-xs font-semibold uppercase transition " + (targetFormat === format ? "bg-accent text-white" : "bg-slate-50 text-slate-500 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-300")}>{format}</button>)}
           </div>
 
           <button
             type="button"
             disabled={isConverting}
             onClick={() => setIsFormatModalOpen(true)}
-            className="flex w-full items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/80 p-3 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100/60 dark:hover:bg-slate-700/60 transition disabled:opacity-50"
+            className="flex min-w-0 w-full items-center justify-between gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/80 p-3 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100/60 dark:hover:bg-slate-700/60 transition disabled:opacity-50"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <FormatIcon format={targetFormat} category={targetMeta.category} size="md" />
-              <div className="text-left">
-                <span className="text-sm font-bold text-slate-800 dark:text-white">{targetMeta.displayName}</span>
-                <span className="block text-[11px] text-slate-400 dark:text-slate-400">{targetMeta.subtitle}</span>
+              <div className="min-w-0 text-left">
+                <span className="block truncate text-sm font-bold text-slate-800 dark:text-white">{targetMeta.displayName}</span>
+                <span className="block break-words text-[11px] text-slate-400 dark:text-slate-400">{targetMeta.subtitle}</span>
               </div>
             </div>
 
-            <ChevronDown className="h-4 w-4 text-slate-400" />
+            <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
           </button>
+          </> : <p className="text-sm text-slate-500">{t("noCompatibleFormats")}</p>}
         </div>
 
         {/* Selected Files Card */}
         <div className="surface-card rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 p-4 sm:p-5 shadow-sm transition">
-          <div className="mb-2 flex items-center justify-between">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
               {t("selectedFiles")} ({files.length})
             </span>
@@ -568,12 +575,13 @@ export function ConvertView() {
                 )}
               </div>
 
-              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:underline">
+              <span className="shrink-0 text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:underline">
                 {t("files")} &gt;
               </span>
             </button>
           )}
         </div>
+        </>}
       </div>
 
       {/* Convert Now Action Button */}
@@ -595,12 +603,12 @@ export function ConvertView() {
       </div>
 
       {/* Quick Formats Bar (matches Desktop Mockup bottom area) */}
-      <QuickFormatsBar
+      {files.length > 0 && availableFormats.length > 0 && <div className="hidden min-w-0 lg:block"><QuickFormatsBar
         currentTarget={targetFormat}
         onSelectFormat={(fmt) => setTargetFormat(fmt)}
-        availableFormats={files.length > 0 ? availableFormats : undefined}
+        availableFormats={availableFormats}
         disabled={isConverting}
-      />
+      /></div>}
 
       {/* Incompatibility / Notices */}
       {incompatibilityNotice && (
@@ -702,13 +710,13 @@ export function ConvertView() {
       )}
 
       {/* Modals */}
-      <TargetFormatModal
+      {isFormatModalOpen && files.length > 0 && availableFormats.length > 0 && <TargetFormatModal
         isOpen={isFormatModalOpen}
         onClose={() => setIsFormatModalOpen(false)}
         selectedFormat={targetFormat}
         onSelectFormat={(fmt) => setTargetFormat(fmt)}
         allowedFormats={availableFormats}
-      />
+      />}
 
       <SelectFilesModal
         isOpen={isFilesModalOpen}

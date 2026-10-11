@@ -26,7 +26,7 @@ export function QuickFormatsBar({
   const { t } = useTranslation();
 
   const displayedFormats = useMemo(() => {
-    if (availableFormats && availableFormats.length > 0) {
+    if (availableFormats !== undefined) {
       const allowedSet = new Set(availableFormats.map((f) => f.toLowerCase().replace(/^\./, "")));
       const prioritized = POPULAR_FORMAT_ORDER.filter((f) => allowedSet.has(f));
       const remaining = availableFormats
